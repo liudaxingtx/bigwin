@@ -463,7 +463,12 @@ const prevPhase=gamePhase;
 const msg=card.act(p);
 log(p.name+' ['+(type==='chance'?'机会':'命运')+'] '+card.text+' → '+msg);
 checkBankrupt(p);
-// Only set to result if card didn't trigger landOnSpace (which sets its own phase)
+// If card triggered a walk animation, let the callback handle landOnSpace + updateUI
+if(cardWalking){
+// Animation callback will call landOnSpace → sets gamePhase → updateUI
+return;
+}
+// Card was a simple money transaction — set to result
 if(gamePhase===prevPhase||gamePhase==='roll')gamePhase='result';
 if(gamePhase!=='gameover')updateUI();
 }
