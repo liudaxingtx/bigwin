@@ -114,7 +114,6 @@ canvas{width:62vh!important;height:62vh!important;border-radius:8px}
 #app{flex-direction:column;padding:8px;gap:8px;align-items:center}
 canvas{width:90vw!important;height:90vw!important}
 #panel{width:90vw;max-width:400px}
-body::before{content:'📱 请将手机横屏以获得最佳体验';display:block;text-align:center;color:#ffd700;padding:12px;font-size:14px;font-weight:bold;animation:pulse 2s ease-in-out infinite;background:rgba(20,20,40,0.9)}
 #setup-box{padding:20px;max-width:95vw}
 #setup-box h1{font-size:28px}
 #setup-box input{width:100px;font-size:14px}
@@ -133,6 +132,15 @@ body::before{content:'📱 请将手机横屏以获得最佳体验';display:bloc
 </select>
 <div id="player-inputs"></div>
 <button class="btn-start" id="btn-start-game">🎲 开始游戏</button>
+</div>
+</div>
+
+<!-- Portrait blocker overlay -->
+<div id="portrait-block" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:500;justify-content:center;align-items:center;flex-direction:column">
+<div style="text-align:center;color:#ffd700;animation:pulse 1.5s ease-in-out infinite">
+<div style="font-size:64px;margin-bottom:16px">📱</div>
+<div style="font-size:22px;font-weight:bold;margin-bottom:8px">请旋转手机</div>
+<div style="font-size:14px;color:#aaa">横屏模式获得最佳体验</div>
 </div>
 </div>
 
@@ -300,16 +308,50 @@ chanceDeck=shuffle([...CHANCE_CARDS]);communityDeck=shuffle([...COMMUNITY_CARDS]
 chanceIdx=0;communityIdx=0;
 }
 
-// Movement
+// Card-triggered walking animation (no jail/doubles logic)
+let cardWalking=false;
+function cardWalkAnimate(p,targetPos,onDone){
+if(animFrame)cancelAnimationFrame(animFrame);
+const startPos=p.position;
+const steps=targetPos>=startPos?targetPos-startPos:targetPos+40-startPos;
+if(steps===0){onDone();return;}
+cardWalking=true;
+let step=0,passedGo=false;
+const stepTime=steps>20?Math.max(40,2000/steps):150,startTime=performance.now();
+function frame(ts){
+const newStep=Math.min(Math.floor((ts-startTime)/stepTime),steps);
+if(newStep>step){
+step=newStep;p.position=(startPos+step)%40;
+if(startPos+step>=40&&!passedGo){passedGo=true;p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 经过起点 +$200');}
+}
+p.animPos=startPos+((ts-startTime)/(steps*stepTime))*steps;
+drawBoard();
+if(step<steps){animFrame=requestAnimationFrame(frame);}
+else{
+p.position=targetPos;p.animPos=targetPos;
+if(!passedGo&&startPos+steps>=40){p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 经过起点 +$200');}
+animFrame=null;cardWalking=false;
+drawBoard();
+onDone();
+}
+}
+animFrame=requestAnimationFrame(frame);
+}
+
+// Movement (used by card effects)
 function movePlayerTo(p,pos){
 const oldPos=p.position;
-p.position=pos;
-if(pos<=oldPos&&oldPos!==0){p.money+=200;log(p.name+' 经过起点，获得 $200');}
+cardWalkAnimate(p,pos,()=>{
 landOnSpace(p);
+updateUI();
+});
 }
 function movePlayerBack(p,steps){
-let np=p.position-steps;if(np<0)np+=40;
-p.position=np;landOnSpace(p);
+const targetPos=(p.position-steps+40)%40;
+cardWalkAnimate(p,targetPos,()=>{
+landOnSpace(p);
+updateUI();
+});
 }
 function sendToJail(p){p.inJail=true;p.jailTurns=0;p.position=10;startJailAnim(p);}
 
@@ -662,12 +704,24 @@ if(nm.length>5){ctx.fillText(nm.slice(0,5),3,12);ctx.fillText(nm.slice(5),3,23);
 else ctx.fillText(nm,3,12);
 ctx.restore();
 
-// Owner bar
+// Owner highlight — full cell tint + thick border + badge
 if(s.owner!==null){
-ctx.fillStyle=players[s.owner].color;ctx.globalAlpha=0.55;
-if(row===0||row===10)ctx.fillRect(x+3,y+h-8,w-6,5);
-else ctx.fillRect(x+w-8,y+3,5,h-6);
-ctx.globalAlpha=1;
+const oc=players[s.owner].color;
+// Tint the whole cell
+ctx.fillStyle=oc+'66';
+if(row===0||row===10)ctx.fillRect(x+2,y+2,w-4,h-4);
+else ctx.fillRect(x+2,y+2,w-4,h-4);
+// Thick top/bottom color bar
+ctx.fillStyle=oc;
+if(row===0||row===10){ctx.fillRect(x+3,y+3,w-6,6);ctx.fillRect(x+3,y+h-9,w-6,6);}
+else{ctx.fillRect(x+3,y+3,6,h-6);ctx.fillRect(x+w-9,y+3,6,h-6);}
+// Owner number badge
+ctx.fillStyle='#fff';ctx.beginPath();
+const bx=row===0||row===10?x+w/2:col===0?x+10:x+w-10;
+const by=row===0||row===10?col===0?y+10:y+h-10:y+h/2;
+ctx.arc(bx,by,8,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#111';ctx.font='bold 8px "Segoe UI",system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+ctx.fillText(s.owner+1,bx,by);ctx.textAlign='start';ctx.textBaseline='alphabetic';
 }
 // Houses
 if(s.houses>0){
@@ -832,8 +886,26 @@ function startGame(){
 const n=parseInt(document.getElementById('player-count').value),names=[],colors=[];
 for(let i=0;i<n;i++){names.push(document.getElementById('pname-'+i).value||'玩家'+(i+1));const sel=document.querySelector('#pcolor-'+i+' .color-dot.selected');colors.push(sel?COLORS[parseInt(sel.dataset.c)]:COLORS[i]);}
 document.getElementById('setup-screen').style.display='none';document.getElementById('app').style.display='flex';
-// Lock landscape on mobile
+
+// Mobile: request fullscreen then lock landscape
+if(window.innerWidth<900){
+const el=document.documentElement;
+if(el.requestFullscreen){el.requestFullscreen().then(()=>{
 if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
+}).catch(()=>{});}
+else if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
+
+// Watch orientation — block portrait after game starts
+const portraitBlocker=document.getElementById('portrait-block');
+const checkOrient=()=>{
+const isPortrait=window.innerHeight>window.innerWidth;
+portraitBlocker.style.display=isPortrait?'flex':'none';
+};
+window.addEventListener('resize',checkOrient);
+window.addEventListener('orientationchange',()=>setTimeout(checkOrient,300));
+checkOrient();
+}
+
 canvas=document.getElementById('board');ctx=canvas.getContext('2d');
 const isMobile=window.innerWidth<820,mw=isMobile?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);
 BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;
