@@ -338,18 +338,44 @@ animFrame=requestAnimationFrame(frame);
 
 // Movement (used by card effects)
 function movePlayerTo(p,pos){
-const oldPos=p.position;
 cardWalkAnimate(p,pos,()=>{
 landOnSpace(p);
 updateUI();
 });
 }
 function movePlayerBack(p,steps){
-const targetPos=(p.position-steps+40)%40;
-cardWalkAnimate(p,targetPos,()=>{
+cardWalkBack(p,steps,()=>{
 landOnSpace(p);
 updateUI();
 });
+}
+
+// Backwards walking animation for "后退" cards
+function cardWalkBack(p,steps,onDone){
+if(animFrame)cancelAnimationFrame(animFrame);
+cardWalking=true;
+const startPos=p.position;
+const targetPos=(startPos-steps+40)%40;
+let step=0;
+const stepTime=150,startTime=performance.now();
+function frame(ts){
+const newStep=Math.min(Math.floor((ts-startTime)/stepTime),steps);
+if(newStep>step){
+step=newStep;p.position=(startPos-step+40)%40;
+}
+// Smooth interpolation going backwards
+let raw=startPos-((ts-startTime)/(steps*stepTime))*steps;
+p.animPos=((raw%40)+40)%40;
+drawBoard();
+if(step<steps){animFrame=requestAnimationFrame(frame);}
+else{
+p.position=targetPos;p.animPos=targetPos;
+animFrame=null;cardWalking=false;
+drawBoard();
+onDone();
+}
+}
+animFrame=requestAnimationFrame(frame);
 }
 
 // Landing
