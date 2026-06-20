@@ -127,7 +127,7 @@ body::before{content:'📱 请将手机横屏以获得最佳体验';display:bloc
 <h1>🎩 大富翁</h1>
 <h3>经典多人对战 · BigWin Monopoly</h3>
 <label class="setup-label">玩家人数</label>
-<select id="player-count" onchange="updatePlayerInputs()">
+<select id="player-count">
 <option value="2">2 人</option><option value="3">3 人</option><option value="4" selected>4 人</option><option value="5">5 人</option><option value="6">6 人</option>
 </select>
 <div id="player-inputs"></div>
@@ -144,11 +144,11 @@ body::before{content:'📱 请将手机横屏以获得最佳体验';display:bloc
 <div id="dice-display"><div class="dice-face" id="die1">?</div><div class="dice-face" id="die2">?</div></div>
 </div>
 <div id="action-hint"></div>
-<button class="btn btn-roll" id="btn-roll" onclick="rollDice()">🎲 掷骰子</button>
-<button class="btn btn-buy" id="btn-buy" onclick="buyProperty()" style="display:none">🏠 购买地产</button>
-<button class="btn btn-pass" id="btn-pass" onclick="passTurn()" style="display:none">⏭ 跳过 (拍卖)</button>
-<button class="btn btn-build" id="btn-build" onclick="buildHouse()" style="display:none">🏗 建造房屋</button>
-<button class="btn btn-continue" id="btn-continue" onclick="continueTurn()" style="display:none">▶ 继续</button>
+<button class="btn btn-roll" id="btn-roll">🎲 掷骰子</button>
+<button class="btn btn-buy" id="btn-buy" style="display:none">🏠 购买地产</button>
+<button class="btn btn-pass" id="btn-pass" style="display:none">⏭ 跳过 (拍卖)</button>
+<button class="btn btn-build" id="btn-build" style="display:none">🏗 建造房屋</button>
+<button class="btn btn-continue" id="btn-continue" style="display:none">▶ 继续</button>
 <div id="game-log"><div>欢迎来到大富翁！</div></div>
 </div>
 </div>
@@ -161,18 +161,18 @@ body::before{content:'📱 请将手机横屏以获得最佳体验';display:bloc
 <div class="bidder-name" id="auction-bidder"></div>
 <div id="auction-input-area">
 <input type="number" id="auction-amount" min="1" value="1">
-<button class="bid-btn" onclick="placeBid()">出价</button>
-<button class="pass-bid-btn" onclick="passBid()">放弃</button>
+<button class="bid-btn" id="btn-place-bid">出价</button>
+<button class="pass-bid-btn" id="btn-pass-bid">放弃</button>
 </div>
 <div id="auction-result" style="display:none">
 <h3 id="auction-winner-text"></h3>
-<button class="bid-btn" onclick="endAuction()" style="margin-top:8px">确定</button>
+<button class="bid-btn" id="btn-end-auction" style="margin-top:8px">确定</button>
 </div>
 </div>
 </div>
 
-<div id="card-overlay" onclick="dismissCard()">
-<div id="card-popup">
+<div id="card-overlay" style="display:none">
+<div id="card-popup" onclick="dismissCard()">
 <div id="card-inner">
 <div class="card-face card-back">
 <div class="card-pattern">🃏</div>
@@ -192,7 +192,7 @@ body::before{content:'📱 请将手机横屏以获得最佳体验';display:bloc
 <h1>🏆</h1>
 <div class="winner-name" id="winner-name"></div>
 <div class="winner-stats" id="winner-stats"></div>
-<button onclick="location.reload()">🔄 再来一局</button>
+<button id="btn-restart">🔄 再来一局</button>
 </div>
 </div>
 
@@ -800,8 +800,19 @@ initGame(n,names,colors);drawBoard();updateUI();hint('轮到 '+players[0].name);
 }
 
 updatePlayerInputs();
-// Use addEventListener for reliability
+// Bind all button event listeners
 document.getElementById('btn-start-game').addEventListener('click', startGame);
+document.getElementById('player-count').addEventListener('change', updatePlayerInputs);
+document.getElementById('btn-roll').addEventListener('click', rollDice);
+document.getElementById('btn-buy').addEventListener('click', buyProperty);
+document.getElementById('btn-pass').addEventListener('click', passTurn);
+document.getElementById('btn-build').addEventListener('click', buildHouse);
+document.getElementById('btn-continue').addEventListener('click', continueTurn);
+document.getElementById('btn-place-bid').addEventListener('click', placeBid);
+document.getElementById('btn-pass-bid').addEventListener('click', passBid);
+document.getElementById('btn-end-auction').addEventListener('click', endAuction);
+document.getElementById('card-overlay').addEventListener('click', dismissCard);
+document.getElementById('btn-restart').addEventListener('click', ()=>location.reload());
 window.addEventListener('resize',()=>{if(canvas){const isM=window.innerWidth<820,mw=isM?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;drawBoard();}});
 </script>
 </body>
