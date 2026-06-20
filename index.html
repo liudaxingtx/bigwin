@@ -644,7 +644,12 @@ function placeBid(){
 const amount=parseInt(document.getElementById('auction-amount').value);
 const bidder=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
 if(isNaN(amount)||amount<=auctionState.currentBid){toast('出价必须高于当前出价！');return;}
-if(amount>bidder.money){toast('资金不足！');return;}
+if(amount>bidder.money){
+// Can't afford — auto pass
+toast(bidder.name+' 资金不足，自动放弃');
+passBid();
+return;
+}
 auctionState.currentBid=amount;auctionState.highestBidder=bidder.id;
 log(bidder.name+' 出价 $'+amount);nextBidder();
 }
@@ -655,6 +660,14 @@ auctionState.passed.add(bid.id);log(bid.name+' 放弃竞拍');nextBidder();
 function nextBidder(){
 do{auctionState.currentBidderIdx=(auctionState.currentBidderIdx+1)%auctionState.totalBidders;}
 while(auctionState.passed.has(auctionState.bidderOrder[auctionState.currentBidderIdx])&&auctionState.passed.size<auctionState.totalBidders);
+// Auto-skip if current bidder can't afford to bid higher
+const next=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
+if(next&&next.money<=auctionState.currentBid&&!auctionState.passed.has(next.id)){
+log(next.name+' 资金不足 ($'+next.money+')，自动放弃');
+auctionState.passed.add(next.id);
+setTimeout(()=>nextBidder(),300);
+return;
+}
 if(auctionState.totalBidders-auctionState.passed.size<=1||auctionState.passed.size>=auctionState.totalBidders-1)finishAuction();
 else updateAuctionDisplay();
 }
