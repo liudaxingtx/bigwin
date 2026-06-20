@@ -66,7 +66,8 @@ canvas{border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,0.5),0 0 0 3px #2a2a
 
 /* Card draw animation */
 #card-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:250;justify-content:center;align-items:center}
-#card-popup{width:260px;height:360px;perspective:600px}
+#card-popup{position:fixed;width:260px;height:360px;perspective:600px;transition:all 0.5s cubic-bezier(0.34,1.56,0.64,1);z-index:251}
+#card-popup.fly-in{transition:all 0.6s cubic-bezier(0.22,0.61,0.36,1)}
 #card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d}
 #card-inner.flipped{transform:rotateY(180deg)}
 .card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.5)}
@@ -363,14 +364,46 @@ const idx=type==='chance'?chanceIdx:communityIdx;
 const card=deck[idx%deck.length];
 if(type==='chance')chanceIdx++;else communityIdx++;
 
-// Show card animation overlay
+// Pre-set card content
 document.getElementById('card-type-label').textContent=type==='chance'?'机会':'命运';
 document.getElementById('card-front').className='card-face card-front '+(type==='chance'?'chance':'community');
 document.getElementById('card-icon').textContent=type==='chance'?'❓':'📬';
 document.getElementById('card-text').textContent=card.text;
 window._pendingCard={p,card,type};
+
+// Calculate player's screen position from canvas
+const popup=document.getElementById('card-popup');
+const canvas=document.getElementById('board');
+const rect=canvas.getBoundingClientRect();
+const{row,col}=getSpacePos(p.position);
+const CELL=rect.width/11;
+const pad=CELL*1.1;
+let cx=rect.left+col*CELL+CELL/2,cy=rect.top+row*CELL+CELL/2;
+if(row===0)cy=rect.top+pad/2;if(row===10)cy=rect.top+rect.height-pad/2;
+if(col===0)cx=rect.left+pad/2;if(col===10)cx=rect.left+rect.width-pad/2;
+
+// Start card at player position, fly to center
+popup.style.transition='none';
+popup.style.left=cx-130+'px';popup.style.top=cy-180+'px';
+popup.style.transform='scale(0.3) rotate(-15deg)';
+popup.style.opacity='0.8';
+
+// Show overlay (dark bg only)
 document.getElementById('card-overlay').style.display='flex';
-setTimeout(()=>document.getElementById('card-inner').classList.add('flipped'),100);
+
+// Force reflow then animate to center
+popup.offsetHeight;
+popup.classList.add('fly-in');
+popup.style.transition='all 0.6s cubic-bezier(0.22,0.61,0.36,1)';
+popup.style.left='50%';popup.style.top='50%';
+popup.style.transform='translate(-50%,-50%) scale(1) rotate(0deg)';
+popup.style.opacity='1';
+
+// Flip after fly-in completes
+setTimeout(()=>{
+popup.classList.remove('fly-in');
+document.getElementById('card-inner').classList.add('flipped');
+},650);
 }
 
 function dismissCard(){
@@ -379,6 +412,11 @@ const{p,card,type}=window._pendingCard;
 window._pendingCard=null;
 document.getElementById('card-overlay').style.display='none';
 document.getElementById('card-inner').classList.remove('flipped');
+// Reset card position for next draw
+const popup=document.getElementById('card-popup');
+popup.classList.remove('fly-in');
+popup.style.transition='none';
+popup.style.left='';popup.style.top='';popup.style.transform='';popup.style.opacity='';
 const msg=card.act(p);
 log(p.name+' ['+(type==='chance'?'机会':'命运')+'] '+card.text+' → '+msg);
 checkBankrupt(p);
