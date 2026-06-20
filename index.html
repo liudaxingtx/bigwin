@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大富翁 - BigWin Monopoly</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;justify-content:center;align-items:center;overflow-x:hidden}
+#app{display:flex;gap:20px;padding:20px;align-items:flex-start;max-width:1400px;width:100%}
+#board-container{position:relative;flex-shrink:0}
+canvas{border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 0 4px #2a2a4a}
+#panel{background:rgba(20,20,40,0.95);border-radius:16px;padding:20px;color:#e0e0e0;min-width:320px;max-width:380px;box-shadow:0 10px 40px rgba(0,0,0,0.4);border:1px solid #333}
+#panel h2{color:#ffd700;font-size:22px;margin-bottom:12px;text-align:center;text-shadow:0 0 10px rgba(255,215,0,0.3)}
+.player-card{background:rgba(40,40,70,0.8);border-radius:10px;padding:12px;margin-bottom:10px;border:2px solid transparent;transition:all 0.3s}
+.player-card.active{border-color:#ffd700;box-shadow:0 0 15px rgba(255,215,0,0.3);background:rgba(50,40,60,0.9)}
+.player-card.bankrupt{opacity:0.4}
+.player-name{font-weight:bold;font-size:16px;margin-bottom:4px}
+.player-money{color:#4caf50;font-size:18px;font-weight:bold}
+.player-prop{font-size:11px;color:#aaa;margin-top:2px}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:6px;vertical-align:middle;border:2px solid #fff8;box-shadow:0 0 8px}
+.btn{display:block;width:100%;padding:12px;margin:8px 0;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:1px}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.4)}
+.btn:active{transform:translateY(0)}
+.btn-roll{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e}
+.btn-buy{background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff}
+.btn-pass{background:linear-gradient(135deg,#f44336,#c62828);color:#fff}
+.btn-build{background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff}
+.btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+#dice-result{text-align:center;font-size:28px;margin:10px 0;color:#ffd700;font-weight:bold;min-height:40px}
+#game-log{background:rgba(0,0,0,0.3);border-radius:8px;padding:10px;max-height:150px;overflow-y:auto;font-size:12px;color:#bbb;margin-top:10px}
+#game-log div{margin:2px 0;padding:2px 0;border-bottom:1px solid #333}
+#setup-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;justify-content:center;align-items:center;z-index:100}
+#setup-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:20px;padding:40px;text-align:center;color:#fff;border:2px solid #ffd700;box-shadow:0 20px 60px rgba(255,215,0,0.2)}
+#setup-box h1{font-size:48px;color:#ffd700;margin-bottom:10px;text-shadow:0 0 20px rgba(255,215,0,0.5)}
+#setup-box h3{color:#aaa;margin-bottom:30px;font-weight:normal}
+#setup-box input{padding:10px 16px;border-radius:8px;border:1px solid #555;background:#222;color:#fff;font-size:16px;margin:5px;width:200px}
+#setup-box select{padding:10px 16px;border-radius:8px;border:1px solid #555;background:#222;color:#fff;font-size:16px;margin:10px}
+.btn-start{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e;font-size:22px;padding:14px 50px;margin-top:20px;border:none;border-radius:12px;cursor:pointer;font-weight:bold;transition:all 0.3s}
+.btn-start:hover{transform:scale(1.05);box-shadow:0 10px 30px rgba(255,215,0,0.4)}
+.setup-label{display:block;margin:10px 0 5px;color:#ccc}
+.color-pick{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.color-dot{width:32px;height:32px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all 0.2s}
+.color-dot.selected{border-color:#fff;transform:scale(1.2)}
+#property-popup{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1a2e;border:2px solid #ffd700;border-radius:16px;padding:24px;z-index:50;color:#fff;min-width:280px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.7)}
+#property-popup h3{margin-bottom:8px;font-size:20px}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#ffd700;color:#1a1a2e;padding:12px 24px;border-radius:8px;font-weight:bold;z-index:200;animation:slideDown 0.3s ease-out, fadeOut 0.5s 2s forwards}
+@keyframes slideDown{from{top:-50px;opacity:0}to{top:20px;opacity:1}}
+@keyframes fadeOut{to{opacity:0}}
+</style>
+</head>
+<body>
+
+<div id="setup-screen">
+<div id="setup-box">
+<h1>🎩 大富翁</h1>
+<h3>经典多人对战 · BigWin Monopoly</h3>
+<label class="setup-label">玩家人数</label>
+<select id="player-count" onchange="updatePlayerInputs()">
+<option value="2">2 人</option><option value="3">3 人</option><option value="4" selected>4 人</option><option value="5">5 人</option><option value="6">6 人</option>
+</select>
+<div id="player-inputs"></div>
+<button class="btn-start" onclick="startGame()">🎲 开始游戏</button>
+</div>
+</div>
+
+<div id="app" style="display:none">
+<div id="board-container"><canvas id="board"></canvas></div>
+<div id="panel">
+<h2>👥 玩家状态</h2>
+<div id="players"></div>
+<div id="dice-result">🎲 准备开始</div>
+<button class="btn btn-roll" id="btn-roll" onclick="rollDice()">🎲 掷骰子</button>
+<button class="btn btn-buy" id="btn-buy" onclick="buyProperty()" style="display:none">🏠 购买地产</button>
+<button class="btn btn-pass" id="btn-pass" onclick="passTurn()" style="display:none">⏭ 跳过</button>
+<button class="btn btn-build" id="btn-build" onclick="buildHouse()" style="display:none">🏗 建造房屋</button>
+<div id="game-log"><div>欢迎来到大富翁！</div></div>
+</div>
+</div>
+
+<div id="property-popup"></div>
+
+<script>
+// ============ CONSTANTS ============
+const COLORS=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c'];
+const COLOR_NAMES=['红色','蓝色','绿色','橙色','紫色','青色'];
+const TOKEN_SYMBOLS=['🚗','🚕','🚙','🚌','🚎','🏎️'];
+
+const SPACES=[
+{name:'起点',type:'go'},
+{name:'地中海大道',type:'property',price:60,rent:[2,10,30,90,160,250],color:'#8B4513',houseCost:50},
+{name:'机会',type:'chance'},
+{name:'波罗的海大道',type:'property',price:60,rent:[4,20,60,180,320,450],color:'#8B4513',houseCost:50},
+{name:'所得税',type:'tax',amount:200},
+{name:'东方铁路',type:'railroad',price:200},
+{name:'东方大道',type:'property',price:100,rent:[6,30,90,270,400,550],color:'#87CEEB',houseCost:50},
+{name:'命运',type:'community'},
+{name:'佛蒙特大道',type:'property',price:100,rent:[6,30,90,270,400,550],color:'#87CEEB',houseCost:50},
+{name:'康涅狄格大道',type:'property',price:120,rent:[8,40,100,300,450,600],color:'#87CEEB',houseCost:50},
+{name:'监狱/探视',type:'jail'},
+{name:'圣查尔斯广场',type:'property',price:140,rent:[10,50,150,450,625,750],color:'#FF69B4',houseCost:100},
+{name:'电力公司',type:'utility',price:150},
+{name:'州立大道',type:'property',price:140,rent:[10,50,150,450,625,750],color:'#FF69B4',houseCost:100},
+{name:'弗吉尼亚大道',type:'property',price:160,rent:[12,60,180,500,700,900],color:'#FF69B4',houseCost:100},
+{name:'宾夕法尼亚铁路',type:'railroad',price:200},
+{name:'圣詹姆斯广场',type:'property',price:180,rent:[14,70,200,550,750,950],color:'#FF8C00',houseCost:100},
+{name:'机会',type:'chance'},
+{name:'田纳西大道',type:'property',price:180,rent:[14,70,200,550,750,950],color:'#FF8C00',houseCost:100},
+{name:'纽约大道',type:'property',price:200,rent:[16,80,220,600,800,1000],color:'#FF8C00',houseCost:100},
+{name:'免费停车',type:'free'},
+{name:'肯塔基大道',type:'property',price:220,rent:[18,90,250,700,875,1050],color:'#FF0000',houseCost:150},
+{name:'机会',type:'chance'},
+{name:'印第安纳大道',type:'property',price:220,rent:[18,90,250,700,875,1050],color:'#FF0000',houseCost:150},
+{name:'伊利诺伊大道',type:'property',price:240,rent:[20,100,300,750,925,1100],color:'#FF0000',houseCost:150},
+{name:'B&O铁路',type:'railroad',price:200},
+{name:'大西洋大道',type:'property',price:260,rent:[22,110,330,800,975,1150],color:'#FFFF00',houseCost:150},
+{name:'文特诺大道',type:'property',price:260,rent:[22,110,330,800,975,1150],color:'#FFFF00',houseCost:150},
+{name:'自来水厂',type:'utility',price:150},
+{name:'马文花园',type:'property',price:280,rent:[24,120,360,850,1025,1200],color:'#FFFF00',houseCost:150},
+{name:'进监狱',type:'gotojail'},
+{name:'太平洋大道',type:'property',price:300,rent:[26,130,390,900,1100,1275],color:'#008000',houseCost:200},
+{name:'北卡罗来纳大道',type:'property',price:300,rent:[26,130,390,900,1100,1275],color:'#008000',houseCost:200},
+{name:'机会',type:'chance'},
+{name:'宾夕法尼亚大道',type:'property',price:320,rent:[28,150,450,1000,1200,1400],color:'#008000',houseCost:200},
+{name:'短线铁路',type:'railroad',price:200},
+{name:'命运',type:'community'},
+{name:'公园广场',type:'property',price:350,rent:[35,175,500,1100,1300,1500],color:'#00008B',houseCost:200},
+{name:'奢侈税',type:'tax',amount:100},
+{name:'海滨大道',type:'property',price:400,rent:[50,200,600,1400,1700,2000],color:'#00008B',houseCost:200}
+];
+
+const CHANCE_CARDS=[
+{text:'银行发放红利 $150',act:p=>{p.money+=150;return'获得 $150'}},
+{text:'前进到起点，领取 $200',act:p=>{movePlayerTo(p,0,true);return'前进到起点'}},
+{text:'后退 3 格',act:p=>{movePlayerBack(p,3);return'后退 3 格'}},
+{text:'缴纳税款 $75',act:p=>{p.money-=75;return'缴税 $75'}},
+{text:'前进到免费停车',act:p=>{movePlayerTo(p,20,false);return'前进到免费停车'}},
+{text:'银行利息 $50',act:p=>{p.money+=50;return'获得利息 $50'}},
+{text:'前进到伊利诺伊大道',act:p=>{movePlayerTo(p,24,false);return'前进到伊利诺伊大道'}},
+{text:'维修费用 $100',act:p=>{p.money-=100;return'维修 -$100'}},
+{text:'前进到圣查尔斯广场',act:p=>{movePlayerTo(p,11,false);return'前进到圣查尔斯广场'}},
+{text:'生日快乐！每人给你 $10',act:p=>{let t=0;players.forEach(o=>{if(o!==p&&!o.bankrupt){o.money-=10;t+=10}});p.money+=t;return'收到 $'+t}},
+{text:'获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
+{text:'进监狱！',act:p=>{sendToJail(p);return'进监狱！'}},
+{text:'获得 $200',act:p=>{p.money+=200;return'获得 $200'}},
+{text:'医疗费用 $50',act:p=>{p.money-=50;return'医疗 -$50'}},
+{text:'前进到海滨大道',act:p=>{movePlayerTo(p,39,false);return'前进到海滨大道'}},
+{text:'银行失误，获得 $200',act:p=>{p.money+=200;return'获得 $200'}}
+];
+
+const COMMUNITY_CARDS=[
+{text:'银行错误，获得 $200',act:p=>{p.money+=200;return'获得 $200'}},
+{text:'医生费用 $50',act:p=>{p.money-=50;return'医疗 -$50'}},
+{text:'出售股票获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
+{text:'人寿保险到期，获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
+{text:'医院费用 $100',act:p=>{p.money-=100;return'医疗 -$100'}},
+{text:'学校费用 $50',act:p=>{p.money-=50;return'学费 -$50'}},
+{text:'咨询服务费 $25',act:p=>{p.money+=25;return'获得 $25'}},
+{text:'维修评估，每栋房子$40，每家酒店$115',act:p=>{let c=0;SPACES.forEach(s=>{if(s.owner===p.id){c+=s.houses*(s.houses===5?115:40)}});p.money-=c;return'维修 -$'+c}},
+{text:'选美比赛获奖 $10',act:p=>{p.money+=10;return'获得 $10'}},
+{text:'继承遗产 $100',act:p=>{p.money+=100;return'获得 $100'}},
+{text:'出售旧货 $50',act:p=>{p.money+=50;return'获得 $50'}},
+{text:'获得 $25',act:p=>{p.money+=25;return'获得 $25'}},
+{text:'进监狱！',act:p=>{sendToJail(p);return'进监狱！'}},
+{text:'前进到起点，领取 $200',act:p=>{movePlayerTo(p,0,true);return'前进到起点'}},
+{text:'获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
+{text:'生日礼物 $10',act:p=>{p.money+=10;return'获得 $10'}}
+];
+
+// ============ GAME STATE ============
+let players=[],currentPlayer=0,gamePhase='roll',diceValues=[0,0],doublesCount=0,animating=false;
+let canvas,ctx,BOARD_SIZE=700,CELL_SIZE,chanceDeck,communityDeck,chanceIdx=0,communityIdx=0;
+let _skipNextAutoAdvance=false;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function initGame(numPlayers,names,colors){
+players=[];currentPlayer=0;gamePhase='roll';doublesCount=0;animating=false;_skipNextAutoAdvance=false;
+for(let i=0;i<numPlayers;i++){
+players.push({id:i,name:names[i]||'玩家'+(i+1),color:colors[i],money:1500,position:0,properties:[],inJail:false,jailTurns:0,bankrupt:false});
+}
+SPACES.forEach(s=>{s.owner=null;s.houses=0});
+chanceDeck=shuffle([...CHANCE_CARDS]);communityDeck=shuffle([...COMMUNITY_CARDS]);
+chanceIdx=0;communityIdx=0;
+}
+
+// ============ MOVEMENT ============
+function movePlayerTo(p,pos,giveGoMoney){
+p.position=pos;
+if(giveGoMoney)p.money+=200;
+landOnSpace(p);
+}
+
+function movePlayerBack(p,steps){
+let newPos=p.position-steps;
+if(newPos<0)newPos+=40;
+p.position=newPos;
+landOnSpace(p);
+}
+
+function sendToJail(p){p.inJail=true;p.jailTurns=0;p.position=10;}
+
+// ============ LANDING LOGIC ============
+function landOnSpace(p){
+const s=SPACES[p.position];
+switch(s.type){
+case'property':case'railroad':case'utility':
+if(s.owner===null){gamePhase='buy';}
+else if(s.owner!==p.id){payRent(p,s);checkBankrupt(p);gamePhase='done';}
+else{gamePhase='build';}
+break;
+case'tax':p.money-=s.amount;log(p.name+' 缴税 $'+s.amount);checkBankrupt(p);gamePhase='done';break;
+case'chance':drawCard(p,'chance');break;
+case'community':drawCard(p,'community');break;
+case'gotojail':sendToJail(p);log(p.name+' 被送进监狱！');gamePhase='done';break;
+case'go':case'free':case'jail':gamePhase='done';break;
+}
+updateUI();
+}
+
+function payRent(p,s){
+let rent=0;
+if(s.type==='railroad'){
+const rrCount=SPACES.filter(sp=>sp.type==='railroad'&&sp.owner===s.owner).length;
+rent=[25,50,100,200][rrCount-1];
+}else if(s.type==='utility'){
+const utCount=SPACES.filter(sp=>sp.type==='utility'&&sp.owner===s.owner).length;
+rent=utCount===2?diceValues[0]*10+10:diceValues[0]*4;
+}else{
+rent=s.rent[Math.min(s.houses||0,5)];
+}
+p.money-=rent;
+players[s.owner].money+=rent;
+log(p.name+' 支付 $'+rent+' 租金给 '+players[s.owner].name);
+}
+
+function drawCard(p,type){
+const deck=type==='chance'?chanceDeck:communityDeck;
+const idx=type==='chance'?chanceIdx:communityIdx;
+const card=deck[idx%deck.length];
+if(type==='chance')chanceIdx++;else communityIdx++;
+const msg=card.act(p);
+log(p.name+' ['+(type==='chance'?'机会':'命运')+'] '+card.text+' → '+msg);
+checkBankrupt(p);
+gamePhase='done';
+updateUI();
+}
+
+function buildHouse(){
+const p=players[currentPlayer];
+const s=SPACES[p.position];
+if(s.type!=='property')return;
+if(s.owner!==p.id)return;
+const colorGroup=SPACES.filter(sp=>sp.color===s.color&&sp.type==='property');
+const ownsAll=colorGroup.every(sp=>sp.owner===p.id);
+if(!ownsAll){toast('需要拥有该颜色组全部地产才能建房！');return;}
+if((s.houses||0)>=5){toast('已是酒店，无法再建！');return;}
+const cost=s.houseCost||50;
+if(p.money<cost){toast('资金不足！');return;}
+const minHouses=Math.min(...colorGroup.map(sp=>sp.houses||0));
+if((s.houses||0)>minHouses){toast('请先在其他同色地产上建房！');return;}
+p.money-=cost;s.houses=(s.houses||0)+1;
+log(p.name+' 在 '+s.name+' 建造了'+(s.houses===5?'酒店':'房屋')+' ($'+cost+')');
+gamePhase='done';updateUI();
+}
+
+function checkBankrupt(p){
+if(p.money<0&&!p.bankrupt){
+p.bankrupt=true;
+log(p.name+' 破产！💸');
+SPACES.forEach(s=>{if(s.owner===p.id){s.owner=null;s.houses=0}});
+p.properties=[];
+const alive=players.filter(pl=>!pl.bankrupt);
+if(alive.length===1){
+setTimeout(()=>toast('🏆 '+alive[0].name+' 获胜！恭喜！'),500);
+gamePhase='gameover';
+}
+}
+}
+
+// ============ DICE & TURN ============
+function rollDice(){
+if(animating||gamePhase==='gameover')return;
+const p=players[currentPlayer];
+if(p.bankrupt){advancePlayer();return;}
+
+diceValues=[Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1];
+const total=diceValues[0]+diceValues[1];
+document.getElementById('dice-result').innerHTML='🎲 '+diceValues[0]+' + '+diceValues[1]+' = '+total;
+log(p.name+' 掷出 '+diceValues[0]+'+'+diceValues[1]+'='+total);
+
+if(p.inJail){
+if(diceValues[0]===diceValues[1]){p.inJail=false;p.jailTurns=0;log(p.name+' 掷出对子，出狱！');}
+else{p.jailTurns++;if(p.jailTurns>=3){p.money-=50;p.inJail=false;p.jailTurns=0;log(p.name+' 缴纳 $50 保释金出狱');}else{log(p.name+' 仍在狱中');gamePhase='done';updateUI();return;}}
+}
+
+if(diceValues[0]===diceValues[1]){doublesCount++;if(doublesCount>=3){sendToJail(p);log(p.name+' 连续三次对子，进监狱！');gamePhase='done';updateUI();return;}}
+else{doublesCount=0;}
+
+animateMove(p,total);
+}
+
+function animateMove(p,steps){
+animating=true;gamePhase='animating';
+const startPos=p.position, endPos=(startPos+steps)%40;
+let passedGo=false;
+const duration=600, startTime=performance.now();
+
+function frame(ts){
+const elapsed=ts-startTime, progress=Math.min(elapsed/duration,1);
+const eased=1-Math.pow(1-progress,3);
+const currentStep=startPos+(steps*eased);
+p.position=Math.floor(currentStep)%40;
+if(currentStep>=40&&!passedGo){passedGo=true;p.money+=200;log(p.name+' 经过起点，获得 $200');}
+drawBoard();
+if(progress<1){requestAnimationFrame(frame);}
+else{
+p.position=endPos;
+if(!passedGo&&startPos+steps>=40){p.money+=200;log(p.name+' 经过起点，获得 $200');}
+drawBoard();animating=false;
+landOnSpace(p);
+if(gamePhase==='done'){
+if(diceValues[0]===diceValues[1]&&!players[currentPlayer].inJail){
+log(players[currentPlayer].name+' 掷出对子，再掷一次！');
+gamePhase='roll';
+}else{
+_skipNextAutoAdvance=true;
+advancePlayer();
+}
+}
+updateUI();
+}
+}
+requestAnimationFrame(frame);
+}
+
+function buyProperty(){
+const p=players[currentPlayer];
+const s=SPACES[p.position];
+if(s.owner!==null||p.money<s.price)return;
+p.money-=s.price;s.owner=p.id;p.properties.push(p.position);
+log(p.name+' 购买了 '+s.name+' ($'+s.price+')');
+gamePhase='done';updateUI();
+}
+
+function passTurn(){
+gamePhase='done';updateUI();
+_skipNextAutoAdvance=true;
+advancePlayer();
+}
+
+function advancePlayer(){
+if(gamePhase==='gameover')return;
+doublesCount=0;
+do{currentPlayer=(currentPlayer+1)%players.length;}while(players[currentPlayer].bankrupt&&players.filter(p=>!p.bankrupt).length>1);
+if(players[currentPlayer].bankrupt)return;
+gamePhase='roll';updateUI();
+}
+
+// ============ RENDERING ============
+function drawBoard(){
+ctx.clearRect(0,0,BOARD_SIZE,BOARD_SIZE);
+ctx.fillStyle='#c8e6c9';ctx.fillRect(0,0,BOARD_SIZE,BOARD_SIZE);
+CELL_SIZE=BOARD_SIZE/11;
+const pad=CELL_SIZE*1.1;
+const inner=BOARD_SIZE-pad*2;
+
+// Center area
+ctx.fillStyle='#dcedc8';ctx.fillRect(pad,pad,inner,inner);
+ctx.fillStyle='#1a1a2e';
+ctx.font='bold 24px "Segoe UI",system-ui';ctx.fillText('🎩 大富翁',BOARD_SIZE/2-62,BOARD_SIZE/2-10);
+ctx.font='14px "Segoe UI",system-ui';ctx.fillText('BIGWIN MONOPOLY',BOARD_SIZE/2-62,BOARD_SIZE/2+18);
+
+// Draw spaces
+for(let i=0;i<40;i++){
+const{row,col,rot}=getSpacePos(i);
+const x=col*CELL_SIZE,y=row*CELL_SIZE;
+let w=CELL_SIZE,h=CELL_SIZE;
+if(row===0||row===10)h=pad;if(col===0||col===10)w=pad;
+
+const s=SPACES[i];
+// Cell bg
+if(s.color&&s.type==='property'){ctx.fillStyle=s.color+'44';ctx.fillRect(x,y,w,h);ctx.fillStyle=s.color;ctx.fillRect(x,y,w,6);}
+ctx.strokeStyle='#333';ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);
+
+// Text
+ctx.fillStyle='#111';ctx.font='bold 10px "Segoe UI",system-ui';
+const measures=[];ctx.save();
+if(rot===0){ctx.translate(x,y);measures.push({w,h,tx:4,ty:14});}
+else if(rot===90){ctx.translate(x+w,y);ctx.rotate(Math.PI/2);measures.push({w:h,h:w,tx:4,ty:14});}
+else if(rot===180){ctx.translate(x+w,y+h);ctx.rotate(Math.PI);measures.push({w,h,tx:4,ty:14});}
+else{ctx.translate(x,y+h);ctx.rotate(-Math.PI/2);measures.push({w:h,h:w,tx:4,ty:14});}
+const nm=s.name;
+if(nm.length>5){ctx.fillText(nm.slice(0,5),4,14);ctx.fillText(nm.slice(5),4,26);}
+else ctx.fillText(nm,4,14);
+ctx.restore();
+
+// Owner indicator & houses
+if(s.owner!==null){
+const op=players[s.owner];
+ctx.fillStyle=op.color;ctx.globalAlpha=0.6;
+if(row===0||row===10)ctx.fillRect(x+4,y+h-10,w-8,6);
+else ctx.fillRect(x+w-10,y+4,6,h-8);
+ctx.globalAlpha=1;
+if(s.houses>0){
+for(let h=0;h<Math.min(s.houses,4);h++){
+const hx=x+4+h*14,hy=row===0?y+h-22:row===10?y+4:col===0?y+4+h*10:y+4+h*10;
+ctx.fillStyle=s.houses===5&&h===3?'#d32f2f':'#2e7d32';
+ctx.fillRect(hx,hy,10,10);
+}
+if(s.houses===5)ctx.fillStyle='#d32f2f';
+}
+}
+// Special icons
+if(s.type==='chance'){ctx.fillStyle='#e91e63';ctx.font='18px serif';ctx.fillText('?',x+w/2-6,y+h/2+6)}
+if(s.type==='community'){ctx.fillStyle='#2196f3';ctx.font='18px serif';ctx.fillText('📫',x+w/2-9,y+h/2+6)}
+if(s.type==='go'){ctx.fillStyle='#4caf50';ctx.font='bold 14px "Segoe UI",system-ui';ctx.fillText('GO',x+8,y+16)}
+if(s.type==='jail'){ctx.fillStyle='#ff9800';ctx.font='16px serif';ctx.fillText('🔒',x+w/2-10,y+18)}
+if(s.type==='gotojail'){ctx.fillStyle='#f44336';ctx.font='12px "Segoe UI",system-ui';ctx.fillText('→监狱',x+4,y+16)}
+if(s.price&&!s.owner){ctx.fillStyle='#333';ctx.font='9px "Segoe UI",system-ui';ctx.fillText('$'+s.price,x+(row===0||row===10?4:w-28),y+((row===0||row===10)?h-4:14))}
+}
+
+// Draw tokens
+const posCount={};
+players.forEach(p=>{
+if(p.bankrupt)return;
+const key=p.position;
+posCount[key]=(posCount[key]||0)+1;
+const idx=posCount[key]-1;
+const{row,col}=getSpacePos(p.position);
+let cx=col*CELL_SIZE+CELL_SIZE/2,cy=row*CELL_SIZE+CELL_SIZE/2;
+if(row===0)cy=pad/2;if(row===10)cy=BOARD_SIZE-pad/2;
+if(col===0)cx=pad/2;if(col===10)cx=BOARD_SIZE-pad/2;
+const ox=(idx%2)*18-9,oy=Math.floor(idx/2)*18-9;
+ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(cx+ox,cy+oy,9,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.stroke();
+ctx.fillStyle='#fff';ctx.font='bold 10px "Segoe UI",system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+ctx.fillText(TOKEN_SYMBOLS[p.id],cx+ox,cy+oy);
+ctx.textAlign='start';ctx.textBaseline='alphabetic';
+});
+}
+
+function getSpacePos(i){
+if(i<=10)return{row:10,col:10-i,rot:0};
+if(i<=20)return{row:10-(i-10),col:0,rot:90};
+if(i<=30)return{row:0,col:i-20,rot:180};
+return{row:i-30,col:10,rot:270};
+}
+
+// ============ UI ============
+function updateUI(){
+drawBoard();
+const panel=document.getElementById('players');
+panel.innerHTML=players.map(p=>{
+const active=p.id===currentPlayer&&!p.bankrupt?'active':'';
+const bkr=p.bankrupt?'bankrupt':'';
+return`<div class="player-card ${active} ${bkr}">
+<div class="player-name"><span class="dot" style="background:${p.color}"></span>${p.name} ${TOKEN_SYMBOLS[p.id]||''}</div>
+<div class="player-money">💰 $${(p.money||0).toLocaleString()}</div>
+<div class="player-prop">🏠 ${p.properties.length} 处地产${p.inJail?' 🔒 狱中':''}</div></div>`;
+}).join('');
+
+const btnRoll=document.getElementById('btn-roll');
+const btnBuy=document.getElementById('btn-buy');
+const btnPass=document.getElementById('btn-pass');
+const btnBuild=document.getElementById('btn-build');
+
+btnRoll.style.display=gamePhase==='roll'&&!animating?'block':'none';
+btnBuy.style.display=gamePhase==='buy'?'block':'none';
+btnPass.style.display=(gamePhase==='buy'||gamePhase==='build')?'block':'none';
+btnBuild.style.display=gamePhase==='build'?'block':'none';
+
+if(gamePhase==='gameover'){
+btnRoll.style.display='none';btnBuy.style.display='none';btnPass.style.display='none';btnBuild.style.display='none';
+}
+}
+
+function log(msg){
+const el=document.getElementById('game-log');
+el.insertAdjacentHTML('afterbegin','<div>'+msg+'</div>');
+while(el.children.length>30)el.lastChild.remove();
+}
+
+function toast(msg){
+const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);
+setTimeout(()=>t.remove(),2500);
+}
+
+// ============ SETUP ============
+function updatePlayerInputs(){
+const n=parseInt(document.getElementById('player-count').value);
+const div=document.getElementById('player-inputs');
+div.innerHTML='';
+for(let i=0;i<n;i++){
+div.innerHTML+=`
+<label class="setup-label">玩家 ${i+1}</label>
+<input id="pname-${i}" placeholder="名字" value="玩家${i+1}">
+<div class="color-pick" id="pcolor-${i}">
+${COLORS.map((c,j)=>`<div class="color-dot${j===i?' selected':''}" style="background:${c}" data-p="${i}" data-c="${j}" onclick="selectColor(this)"></div>`).join('')}
+</div>`;
+}
+}
+
+function selectColor(el){
+const p=el.dataset.p;
+document.querySelectorAll('#pcolor-'+p+' .color-dot').forEach(d=>d.classList.remove('selected'));
+el.classList.add('selected');
+}
+
+function startGame(){
+const n=parseInt(document.getElementById('player-count').value);
+const names=[],colors=[];
+for(let i=0;i<n;i++){
+names.push(document.getElementById('pname-'+i).value||'玩家'+(i+1));
+const sel=document.querySelector('#pcolor-'+i+' .color-dot.selected');
+if(sel){colors.push(COLORS[parseInt(sel.dataset.c)]);}
+else{colors.push(COLORS[i]);}
+}
+document.getElementById('setup-screen').style.display='none';
+document.getElementById('app').style.display='flex';
+canvas=document.getElementById('board');
+ctx=canvas.getContext('2d');
+const size=Math.min(window.innerWidth-420,window.innerHeight-40,700);
+BOARD_SIZE=size;canvas.width=size;canvas.height=size;
+initGame(n,names,colors);
+drawBoard();updateUI();
+log('🎩 大富翁游戏开始！'+n+' 位玩家');
+}
+
+updatePlayerInputs();
+window.addEventListener('resize',()=>{
+if(canvas){
+const size=Math.min(window.innerWidth-420,window.innerHeight-40,700);
+BOARD_SIZE=size;canvas.width=size;canvas.height=size;drawBoard();
+}
+});
+</script>
+</body>
+</html>
