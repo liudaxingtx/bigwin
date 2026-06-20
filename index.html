@@ -272,6 +272,8 @@ const COMMUNITY_CARDS=[
 let players=[],currentPlayer=0,gamePhase='roll',diceValues=[0,0],doublesCount=0;
 let canvas,ctx,BOARD_SIZE=700,CELL_SIZE,chanceDeck,communityDeck,chanceIdx=0,communityIdx=0;
 let animFrame=null,auctionState=null;
+let floatingTexts=[];
+let jailAnim=null; // {player, startTime}
 let tokenAnims={}; // per-player animation state: {fromX,fromY,toX,toY,progress}
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -297,7 +299,7 @@ function movePlayerBack(p,steps){
 let np=p.position-steps;if(np<0)np+=40;
 p.position=np;landOnSpace(p);
 }
-function sendToJail(p){p.inJail=true;p.jailTurns=0;p.position=10;}
+function sendToJail(p){p.inJail=true;p.jailTurns=0;p.position=10;startJailAnim(p);}
 
 // Landing
 function landOnSpace(p){
@@ -322,7 +324,7 @@ gamePhase='result';hint(why);
 }
 else{gamePhase='result';hint('你拥有 '+s.name);}
 break;
-case'tax':p.money-=s.amount;log(p.name+' 缴税 $'+s.amount);checkBankrupt(p);gamePhase='result';hint(p.name+' 缴税 $'+s.amount);break;
+case'tax':p.money-=s.amount;moneyAnim('-$'+s.amount,'#f44336');log(p.name+' 缴税 $'+s.amount);checkBankrupt(p);gamePhase='result';hint(p.name+' 缴税 $'+s.amount);break;
 case'chance':drawCard(p,'chance');break;
 case'community':drawCard(p,'community');break;
 case'gotojail':sendToJail(p);log(p.name+' 被送进监狱！');gamePhase='result';hint(p.name+' 进监狱了！');break;
@@ -339,6 +341,7 @@ if(s.type==='railroad'){const n=SPACES.filter(sp=>sp.type==='railroad'&&sp.owner
 else if(s.type==='utility'){const n=SPACES.filter(sp=>sp.type==='utility'&&sp.owner===s.owner).length;rent=n===2?diceValues[0]*10+10:diceValues[0]*4;}
 else{rent=s.rent[Math.min(s.houses||0,5)];}
 p.money-=rent;players[s.owner].money+=rent;
+moneyAnim('-$'+rent,'#f44336');
 log(p.name+' 支付 $'+rent+' 租金给 '+players[s.owner].name);
 hint(p.name+' 支付 $'+rent+' 租金');
 }
@@ -451,14 +454,14 @@ const elapsed=ts-startTime;
 const newStep=Math.min(Math.floor(elapsed/stepTime),steps);
 if(newStep>step){
 step=newStep;p.position=(startPos+step)%40;
-if(startPos+step>=40&&!passedGo){passedGo=true;p.money+=200;log(p.name+' 经过起点 +$200');}
+if(startPos+step>=40&&!passedGo){passedGo=true;p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 经过起点 +$200');}
 }
 p.animPos=startPos+(elapsed/totalTime)*steps;
 drawBoard();
 if(step<steps){animFrame=requestAnimationFrame(frame);}
 else{
 p.position=endPos;p.animPos=endPos;
-if(!passedGo&&startPos+steps>=40){p.money+=200;log(p.name+' 经过起点 +$200');}
+if(!passedGo&&startPos+steps>=40){p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 经过起点 +$200');}
 animFrame=null;
 drawBoard();
 landOnSpace(p);
@@ -471,6 +474,7 @@ function buyProperty(){
 const p=players[currentPlayer],s=SPACES[p.position];
 if(s.owner!==null||p.money<s.price)return;
 p.money-=s.price;s.owner=p.id;p.properties.push(p.position);
+moneyAnim('-$'+s.price,'#f44336');
 log(p.name+' 购买了 '+s.name+' ($'+s.price+')');
 gamePhase='result';updateUI();
 }
@@ -676,12 +680,57 @@ ctx.fillText(p.id+1,x+r*0.45,y-r*0.85);ctx.textAlign='start';ctx.textBaseline='a
 if(p.id===currentPlayer&&!p.bankrupt){
 ctx.strokeStyle='#ffd700';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y-r*0.3,r*0.75,0,Math.PI*2);ctx.stroke();
 }
-}
+});
+// Draw animations on top
+drawFloatingTexts();
+drawJailAnim();
 
 function darken(hex,amt){
 let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
 r=Math.max(0,r-amt);g=Math.max(0,g-amt);b=Math.max(0,b-amt);
 return'#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+function moneyAnim(text,color){
+const p=players[currentPlayer];
+const{row,col}=getSpacePos(p.position);
+const{cx,cy}=getTokenCenter(p.position);
+floatingTexts.push({x:cx,y:cy,text,color,alpha:1,vy:-1.5,life:60});
+}
+function drawFloatingTexts(){
+for(let i=floatingTexts.length-1;i>=0;i--){
+const f=floatingTexts[i];
+f.y+=f.vy;f.life--;
+if(f.life<=20)f.alpha=f.life/20;
+ctx.save();ctx.globalAlpha=f.alpha;
+ctx.font='bold 16px "Segoe UI",system-ui';ctx.textAlign='center';
+ctx.fillStyle=f.color;ctx.fillText(f.text,f.x,f.y);
+ctx.restore();
+if(f.life<=0)floatingTexts.splice(i,1);
+}
+}
+
+function startJailAnim(p){
+jailAnim={player:p.id,startTime:performance.now()};
+log(p.name+' 被警车带走！🚔');
+}
+function drawJailAnim(){
+if(!jailAnim)return;
+const elapsed=performance.now()-jailAnim.startTime;
+const duration=1500;
+if(elapsed>duration){jailAnim=null;return;}
+const p=players[jailAnim.player];
+const{row,col}=getSpacePos(10); // jail position
+const cx=col*CELL_SIZE+CELL_SIZE/2,cy=row*CELL_SIZE+CELL_SIZE/2;
+const progress=Math.min(elapsed/duration,1);
+const ease=1-Math.pow(1-progress,2);
+// Police car drives from current pos to jail
+const{row:sr,col:sc}=getSpacePos(p.position||0);
+const scx=sc*CELL_SIZE+CELL_SIZE/2,scy=sr*CELL_SIZE+CELL_SIZE/2;
+const x=scx+(cx-scx)*ease,y=scy+(cy-scy)*ease;
+ctx.save();ctx.font='28px serif';ctx.textAlign='center';
+ctx.fillText('🚔',x,y-10);
+ctx.restore();
 }
 
 function updateUI(){
