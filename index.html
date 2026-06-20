@@ -913,7 +913,11 @@ btnContinue.style.display=gamePhase==='result'?'block':'none';
 if(gamePhase==='gameover'){
 btnRoll.style.display='none';btnBuy.style.display='none';btnPass.style.display='none';
 btnBuild.style.display='none';btnContinue.style.display='none';
+clearSave();
 }
+
+// Auto-save on stable states
+if(!cardWalking&&!auctionState)saveGame();
 }
 
 function hint(msg){document.getElementById('action-hint').textContent=msg;}
@@ -930,6 +934,7 @@ function selectColor(el){const p=el.dataset.p;document.querySelectorAll('#pcolor
 function startGame(){
 const n=parseInt(document.getElementById('player-count').value),names=[],colors=[];
 for(let i=0;i<n;i++){names.push(document.getElementById('pname-'+i).value||'玩家'+(i+1));const sel=document.querySelector('#pcolor-'+i+' .color-dot.selected');colors.push(sel?COLORS[parseInt(sel.dataset.c)]:COLORS[i]);}
+clearSave();
 document.getElementById('setup-screen').style.display='none';document.getElementById('app').style.display='flex';
 
 // Watch orientation — block portrait after game starts
@@ -949,6 +954,52 @@ initGame(n,names,colors);drawBoard();updateUI();hint('轮到 '+players[0].name);
 }
 
 updatePlayerInputs();
+// === Game save/restore ===
+function saveGame(){
+const data={
+players:players.map(p=>({id:p.id,name:p.name,color:p.color,money:p.money,position:p.position,properties:p.properties,inJail:p.inJail,jailTurns:p.jailTurns,bankrupt:p.bankrupt})),
+currentPlayer,gamePhase,doublesCount,
+spaces:SPACES.map(s=>({owner:s.owner,houses:s.houses})),
+chanceIdx,communityIdx
+};
+localStorage.setItem('bigwin_save',JSON.stringify(data));
+}
+function hasSavedGame(){
+return !!localStorage.getItem('bigwin_save');
+}
+function loadSavedGame(){
+const raw=localStorage.getItem('bigwin_save');
+if(!raw)return false;
+try{
+const data=JSON.parse(raw);
+players=data.players.map(p=>({...p,animPos:p.position}));
+currentPlayer=data.currentPlayer;
+gamePhase=data.gamePhase;
+doublesCount=data.doublesCount||0;
+data.spaces.forEach((s,i)=>{SPACES[i].owner=s.owner;SPACES[i].houses=s.houses;});
+chanceIdx=data.chanceIdx||0;communityIdx=data.communityIdx||0;
+chanceDeck=shuffle([...CHANCE_CARDS]);communityDeck=shuffle([...COMMUNITY_CARDS]);
+auctionState=null;cardWalking=false;jailAnim=null;floatingTexts=[];tokenAnims={};
+return true;
+}catch(e){return false;}
+}
+function clearSave(){localStorage.removeItem('bigwin_save');}
+
+// Check for saved game on load
+if(hasSavedGame()){
+document.getElementById('setup-screen').style.display='none';
+document.getElementById('app').style.display='flex';
+canvas=document.getElementById('board');ctx=canvas.getContext('2d');
+const isMobile=window.innerWidth<820,mw=isMobile?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);
+BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;
+if(loadSavedGame()){
+drawBoard();updateUI();
+if(gamePhase==='roll')hint('轮到 '+players[currentPlayer].name);
+else if(gamePhase==='buy'){const s=SPACES[players[currentPlayer].position];hint('购买 '+s.name+' ($'+s.price+')？');}
+else if(gamePhase==='build')hint('可以建房');
+else hint('轮到 '+players[currentPlayer].name);
+}
+}
 // Mobile: request landscape on first touch of setup screen
 (function(){
 let locked=false;
@@ -974,7 +1025,7 @@ document.getElementById('btn-place-bid').addEventListener('click', placeBid);
 document.getElementById('btn-pass-bid').addEventListener('click', passBid);
 document.getElementById('btn-end-auction').addEventListener('click', endAuction);
 document.getElementById('card-overlay').addEventListener('click', dismissCard);
-document.getElementById('btn-restart').addEventListener('click', ()=>location.reload());
+document.getElementById('btn-restart').addEventListener('click', ()=>{clearSave();location.reload();});
 window.addEventListener('resize',()=>{if(canvas){const isM=window.innerWidth<820,mw=isM?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;drawBoard();}});
 </script>
 </body>
