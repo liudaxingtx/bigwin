@@ -417,10 +417,13 @@ const popup=document.getElementById('card-popup');
 popup.classList.remove('fly-in');
 popup.style.transition='none';
 popup.style.left='';popup.style.top='';popup.style.transform='';popup.style.opacity='';
+const prevPhase=gamePhase;
 const msg=card.act(p);
 log(p.name+' ['+(type==='chance'?'机会':'命运')+'] '+card.text+' → '+msg);
 checkBankrupt(p);
-gamePhase='result';updateUI();
+// Only set to result if card didn't trigger landOnSpace (which sets its own phase)
+if(gamePhase===prevPhase||gamePhase==='roll')gamePhase='result';
+if(gamePhase!=='gameover')updateUI();
 }
 
 function buildHouse(){
