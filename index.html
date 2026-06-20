@@ -932,14 +932,6 @@ const n=parseInt(document.getElementById('player-count').value),names=[],colors=
 for(let i=0;i<n;i++){names.push(document.getElementById('pname-'+i).value||'玩家'+(i+1));const sel=document.querySelector('#pcolor-'+i+' .color-dot.selected');colors.push(sel?COLORS[parseInt(sel.dataset.c)]:COLORS[i]);}
 document.getElementById('setup-screen').style.display='none';document.getElementById('app').style.display='flex';
 
-// Mobile: request fullscreen then lock landscape
-if(window.innerWidth<900){
-const el=document.documentElement;
-if(el.requestFullscreen){el.requestFullscreen().then(()=>{
-if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
-}).catch(()=>{});}
-else if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
-
 // Watch orientation — block portrait after game starts
 const portraitBlocker=document.getElementById('portrait-block');
 const checkOrient=()=>{
@@ -949,7 +941,6 @@ portraitBlocker.style.display=isPortrait?'flex':'none';
 window.addEventListener('resize',checkOrient);
 window.addEventListener('orientationchange',()=>setTimeout(checkOrient,300));
 checkOrient();
-}
 
 canvas=document.getElementById('board');ctx=canvas.getContext('2d');
 const isMobile=window.innerWidth<820,mw=isMobile?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);
@@ -958,6 +949,19 @@ initGame(n,names,colors);drawBoard();updateUI();hint('轮到 '+players[0].name);
 }
 
 updatePlayerInputs();
+// Mobile: request landscape on first touch of setup screen
+(function(){
+let locked=false;
+document.getElementById('setup-screen').addEventListener('click',function(){
+if(locked||window.innerWidth>=900)return;
+locked=true;
+const el=document.documentElement;
+if(el.requestFullscreen){el.requestFullscreen().then(()=>{
+if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
+}).catch(()=>{});}
+else if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
+},{once:true});
+})();
 // Bind all button event listeners
 document.getElementById('btn-start-game').addEventListener('click', startGame);
 document.getElementById('player-count').addEventListener('change', updatePlayerInputs);
