@@ -131,7 +131,7 @@ body::before{content:'📱 请将手机横屏以获得最佳体验';display:bloc
 <option value="2">2 人</option><option value="3">3 人</option><option value="4" selected>4 人</option><option value="5">5 人</option><option value="6">6 人</option>
 </select>
 <div id="player-inputs"></div>
-<button class="btn-start" onclick="startGame()">🎲 开始游戏</button>
+<button class="btn-start" id="btn-start-game">🎲 开始游戏</button>
 </div>
 </div>
 
@@ -800,6 +800,8 @@ initGame(n,names,colors);drawBoard();updateUI();hint('轮到 '+players[0].name);
 }
 
 updatePlayerInputs();
+// Use addEventListener for reliability
+document.getElementById('btn-start-game').addEventListener('click', startGame);
 window.addEventListener('resize',()=>{if(canvas){const isM=window.innerWidth<820,mw=isM?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;drawBoard();}});
 </script>
 </body>
