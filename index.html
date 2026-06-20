@@ -637,7 +637,15 @@ document.getElementById('auction-bid').textContent=auctionState.currentBid;
 const bid=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
 document.getElementById('auction-bidder').textContent=bid.name+' 请出价（高于 $'+(auctionState.currentBid||0)+'）';
 document.getElementById('auction-amount').min=auctionState.currentBid+1;
-document.getElementById('auction-amount').value=Math.max(bid.money, auctionState.currentBid+1);
+// Smart default: if we have more cash than highest bidder, default to their total+1 to knock them out
+let defaultBid=auctionState.currentBid+1;
+if(auctionState.highestBidder!==null){
+const highest=players[auctionState.highestBidder];
+if(bid.money>highest.money){
+defaultBid=Math.max(defaultBid,Math.min(bid.money,highest.money+1));
+}
+}
+document.getElementById('auction-amount').value=Math.min(bid.money,Math.max(defaultBid,auctionState.currentBid+1));
 document.getElementById('auction-amount').placeholder='出价金额';
 }
 function placeBid(){
@@ -863,6 +871,12 @@ startJailAnim(p,oldPos);
 }
 function startJailAnim(p,fromPos){
 jailAnim={player:p.id,fromPos:fromPos,startTime:performance.now()};
+// Keep redrawing until jail animation finishes
+function jailFrame(){
+drawBoard();
+if(jailAnim)requestAnimationFrame(jailFrame);
+}
+requestAnimationFrame(jailFrame);
 }
 function drawJailAnim(){
 if(!jailAnim)return;
@@ -937,16 +951,6 @@ for(let i=0;i<n;i++){names.push(document.getElementById('pname-'+i).value||'玩�
 clearSave();
 document.getElementById('setup-screen').style.display='none';document.getElementById('app').style.display='flex';
 
-// Watch orientation — block portrait after game starts
-const portraitBlocker=document.getElementById('portrait-block');
-const checkOrient=()=>{
-const isPortrait=window.innerHeight>window.innerWidth;
-portraitBlocker.style.display=isPortrait?'flex':'none';
-};
-window.addEventListener('resize',checkOrient);
-window.addEventListener('orientationchange',()=>setTimeout(checkOrient,300));
-checkOrient();
-
 canvas=document.getElementById('board');ctx=canvas.getContext('2d');
 const isMobile=window.innerWidth<820,mw=isMobile?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);
 BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;
@@ -954,6 +958,17 @@ initGame(n,names,colors);drawBoard();updateUI();hint('轮到 '+players[0].name);
 }
 
 updatePlayerInputs();
+// Global orientation watch — also works on setup screen
+(function(){
+const portraitBlocker=document.getElementById('portrait-block');
+const checkOrient=()=>{
+const isPortrait=window.innerHeight>window.innerWidth&&window.innerWidth<900;
+portraitBlocker.style.display=isPortrait?'flex':'none';
+};
+window.addEventListener('resize',checkOrient);
+window.addEventListener('orientationchange',()=>setTimeout(checkOrient,300));
+checkOrient();
+})();
 // === Game save/restore ===
 function saveGame(){
 const data={
