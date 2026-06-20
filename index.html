@@ -47,6 +47,24 @@ canvas{border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 0 4px #2a2a
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#ffd700;color:#1a1a2e;padding:12px 24px;border-radius:8px;font-weight:bold;z-index:200;animation:slideDown 0.3s ease-out, fadeOut 0.5s 2s forwards}
 @keyframes slideDown{from{top:-50px;opacity:0}to{top:20px;opacity:1}}
 @keyframes fadeOut{to{opacity:0}}
+#auction-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:300;justify-content:center;align-items:center}
+#auction-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #ffd700;border-radius:20px;padding:30px;text-align:center;color:#fff;min-width:350px;max-width:90vw;box-shadow:0 20px 60px rgba(255,215,0,0.3)}
+#auction-box h2{color:#ffd700;margin-bottom:8px}
+#auction-box h3{color:#fff;margin-bottom:16px}
+#auction-box .current-bid{font-size:28px;color:#4caf50;font-weight:bold;margin:10px 0}
+#auction-box .bidder-name{color:#ffd700;font-size:18px;margin:10px 0}
+#auction-box input{padding:10px 16px;border-radius:8px;border:1px solid #555;background:#222;color:#fff;font-size:18px;width:150px;text-align:center;margin:10px}
+#auction-box .bid-btn{background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;padding:10px 30px;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin:5px}
+#auction-box .pass-bid-btn{background:linear-gradient(135deg,#f44336,#c62828);color:#fff;padding:10px 30px;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin:5px}
+/* Mobile responsive */
+@media(max-width:850px){
+#app{flex-direction:column;align-items:center;padding:10px;gap:10px}
+#panel{min-width:unset;max-width:unset;width:100%;max-width:500px}
+canvas{max-width:100%;height:auto!important}
+#setup-box{padding:20px;max-width:95vw}
+#setup-box h1{font-size:32px}
+#setup-box input{width:150px;font-size:14px}
+}
 </style>
 </head>
 <body>
@@ -79,6 +97,24 @@ canvas{border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 0 4px #2a2a
 </div>
 
 <div id="property-popup"></div>
+
+<div id="auction-overlay">
+<div id="auction-box">
+<h2>🔨 拍卖</h2>
+<h3 id="auction-property-name"></h3>
+<div class="current-bid">当前出价: $<span id="auction-bid">0</span></div>
+<div class="bidder-name" id="auction-bidder">起拍价 $1</div>
+<div id="auction-input-area">
+<input type="number" id="auction-amount" min="1" value="1">
+<button class="bid-btn" onclick="placeBid()">出价</button>
+<button class="pass-bid-btn" onclick="passBid()">放弃</button>
+</div>
+<div id="auction-result" style="display:none">
+<h3 id="auction-winner-text"></h3>
+<button class="bid-btn" onclick="endAuction()" style="margin-top:10px">确定</button>
+</div>
+</div>
+</div>
 
 <script>
 // ============ CONSTANTS ============
@@ -131,20 +167,20 @@ const SPACES=[
 
 const CHANCE_CARDS=[
 {text:'银行发放红利 $150',act:p=>{p.money+=150;return'获得 $150'}},
-{text:'前进到起点，领取 $200',act:p=>{movePlayerTo(p,0,true);return'前进到起点'}},
+{text:'前进到起点，领取 $200',act:p=>{movePlayerTo(p,0);return'前进到起点'}},
 {text:'后退 3 格',act:p=>{movePlayerBack(p,3);return'后退 3 格'}},
 {text:'缴纳税款 $75',act:p=>{p.money-=75;return'缴税 $75'}},
-{text:'前进到免费停车',act:p=>{movePlayerTo(p,20,false);return'前进到免费停车'}},
+{text:'前进到免费停车',act:p=>{movePlayerTo(p,20);return'前进到免费停车'}},
 {text:'银行利息 $50',act:p=>{p.money+=50;return'获得利息 $50'}},
-{text:'前进到伊利诺伊大道',act:p=>{movePlayerTo(p,24,false);return'前进到伊利诺伊大道'}},
+{text:'前进到伊利诺伊大道',act:p=>{movePlayerTo(p,24);return'前进到伊利诺伊大道'}},
 {text:'维修费用 $100',act:p=>{p.money-=100;return'维修 -$100'}},
-{text:'前进到圣查尔斯广场',act:p=>{movePlayerTo(p,11,false);return'前进到圣查尔斯广场'}},
+{text:'前进到圣查尔斯广场',act:p=>{movePlayerTo(p,11);return'前进到圣查尔斯广场'}},
 {text:'生日快乐！每人给你 $10',act:p=>{let t=0;players.forEach(o=>{if(o!==p&&!o.bankrupt){o.money-=10;t+=10}});p.money+=t;return'收到 $'+t}},
 {text:'获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
 {text:'进监狱！',act:p=>{sendToJail(p);return'进监狱！'}},
 {text:'获得 $200',act:p=>{p.money+=200;return'获得 $200'}},
 {text:'医疗费用 $50',act:p=>{p.money-=50;return'医疗 -$50'}},
-{text:'前进到海滨大道',act:p=>{movePlayerTo(p,39,false);return'前进到海滨大道'}},
+{text:'前进到海滨大道',act:p=>{movePlayerTo(p,39);return'前进到海滨大道'}},
 {text:'银行失误，获得 $200',act:p=>{p.money+=200;return'获得 $200'}}
 ];
 
@@ -162,7 +198,7 @@ const COMMUNITY_CARDS=[
 {text:'出售旧货 $50',act:p=>{p.money+=50;return'获得 $50'}},
 {text:'获得 $25',act:p=>{p.money+=25;return'获得 $25'}},
 {text:'进监狱！',act:p=>{sendToJail(p);return'进监狱！'}},
-{text:'前进到起点，领取 $200',act:p=>{movePlayerTo(p,0,true);return'前进到起点'}},
+{text:'前进到起点，领取 $200',act:p=>{movePlayerTo(p,0);return'前进到起点'}},
 {text:'获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
 {text:'生日礼物 $10',act:p=>{p.money+=10;return'获得 $10'}}
 ];
@@ -185,9 +221,10 @@ chanceIdx=0;communityIdx=0;
 }
 
 // ============ MOVEMENT ============
-function movePlayerTo(p,pos,giveGoMoney){
+function movePlayerTo(p,pos){
+const oldPos=p.position;
 p.position=pos;
-if(giveGoMoney)p.money+=200;
+if(pos<=oldPos&&oldPos!==0){p.money+=200;log(p.name+' 经过起点，获得 $200');}
 landOnSpace(p);
 }
 
@@ -344,6 +381,106 @@ gamePhase='done';updateUI();
 }
 
 function passTurn(){
+const s=SPACES[players[currentPlayer].position];
+if(s.type==='property'||s.type==='railroad'||s.type==='utility'){
+if(s.owner===null){startAuction(s);return;}
+}
+gamePhase='done';updateUI();
+_skipNextAutoAdvance=true;
+advancePlayer();
+}
+
+// ============ AUCTION ============
+let auctionState=null;
+
+function startAuction(space){
+const alive=players.filter(p=>!p.bankrupt);
+if(alive.length<=1){gamePhase='done';updateUI();advancePlayer();return;}
+auctionState={
+space:space,
+currentBid:0,
+highestBidder:null,
+bidderOrder:alive.map(p=>p.id),
+currentBidderIdx:0,
+passed:new Set(),
+totalBidders:alive.length
+};
+showAuctionUI();
+}
+
+function showAuctionUI(){
+const s=auctionState.space;
+document.getElementById('auction-property-name').textContent=s.name+' ($'+s.price+')';
+updateAuctionDisplay();
+document.getElementById('auction-overlay').style.display='flex';
+document.getElementById('auction-input-area').style.display='block';
+document.getElementById('auction-result').style.display='none';
+}
+
+function updateAuctionDisplay(){
+document.getElementById('auction-bid').textContent=auctionState.currentBid;
+const bidderId=auctionState.bidderOrder[auctionState.currentBidderIdx];
+const bidder=players[bidderId];
+document.getElementById('auction-bidder').textContent=bidder.name+' 请出价';
+document.getElementById('auction-amount').min=auctionState.currentBid+1;
+document.getElementById('auction-amount').value=auctionState.currentBid+1;
+}
+
+function placeBid(){
+const amount=parseInt(document.getElementById('auction-amount').value);
+const bidderId=auctionState.bidderOrder[auctionState.currentBidderIdx];
+const bidder=players[bidderId];
+if(isNaN(amount)||amount<=auctionState.currentBid){toast('出价必须高于当前出价！');return;}
+if(amount>bidder.money){toast('资金不足！');return;}
+auctionState.currentBid=amount;
+auctionState.highestBidder=bidderId;
+log(bidder.name+' 出价 $'+amount);
+nextBidder();
+}
+
+function passBid(){
+const bidderId=auctionState.bidderOrder[auctionState.currentBidderIdx];
+const bidder=players[bidderId];
+auctionState.passed.add(bidderId);
+log(bidder.name+' 放弃竞拍');
+nextBidder();
+}
+
+function nextBidder(){
+do{
+auctionState.currentBidderIdx=(auctionState.currentBidderIdx+1)%auctionState.totalBidders;
+}while(auctionState.passed.has(auctionState.bidderOrder[auctionState.currentBidderIdx])&&auctionState.passed.size<auctionState.totalBidders);
+
+const activeParticipants=auctionState.totalBidders-auctionState.passed.size;
+if(activeParticipants<=1||auctionState.passed.size>=auctionState.totalBidders-1){
+finishAuction();
+}else{
+updateAuctionDisplay();
+}
+}
+
+function finishAuction(){
+const s=auctionState.space;
+document.getElementById('auction-input-area').style.display='none';
+document.getElementById('auction-result').style.display='block';
+
+if(auctionState.highestBidder===null){
+document.getElementById('auction-winner-text').textContent=s.name+' 流拍，无人出价';
+}else{
+const winner=players[auctionState.highestBidder];
+const bid=auctionState.currentBid;
+winner.money-=bid;
+const spaceIdx=SPACES.indexOf(s);
+s.owner=winner.id;
+if(!winner.properties.includes(spaceIdx))winner.properties.push(spaceIdx);
+document.getElementById('auction-winner-text').textContent='🏆 '+winner.name+' 以 $'+bid+' 赢得 '+s.name+'！';
+log('🔨 拍卖: '+winner.name+' 以 $'+bid+' 赢得 '+s.name);
+}
+}
+
+function endAuction(){
+document.getElementById('auction-overlay').style.display='none';
+auctionState=null;
 gamePhase='done';updateUI();
 _skipNextAutoAdvance=true;
 advancePlayer();
@@ -468,6 +605,7 @@ const btnBuild=document.getElementById('btn-build');
 btnRoll.style.display=gamePhase==='roll'&&!animating?'block':'none';
 btnBuy.style.display=gamePhase==='buy'?'block':'none';
 btnPass.style.display=(gamePhase==='buy'||gamePhase==='build')?'block':'none';
+btnPass.textContent=gamePhase==='buy'?'⏭ 跳过 (拍卖)':'⏭ 跳过';
 btnBuild.style.display=gamePhase==='build'?'block':'none';
 
 if(gamePhase==='gameover'){
