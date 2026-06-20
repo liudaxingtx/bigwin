@@ -64,6 +64,21 @@ canvas{border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,0.5),0 0 0 3px #2a2a
 .bid-btn{background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;padding:8px 24px;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin:4px}
 .pass-bid-btn{background:linear-gradient(135deg,#f44336,#c62828);color:#fff;padding:8px 24px;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin:4px}
 
+/* Card draw animation */
+#card-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:250;justify-content:center;align-items:center}
+#card-popup{width:260px;height:360px;perspective:600px}
+#card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d}
+#card-inner.flipped{transform:rotateY(180deg)}
+.card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.5)}
+.card-back{background:linear-gradient(135deg,#e91e63,#9c27b0);border:3px solid #ffd700}
+.card-back .card-pattern{font-size:60px}
+.card-back .card-type{color:#ffd700;font-size:14px;font-weight:bold;margin-top:8px}
+.card-front{background:#fffdf0;border:3px solid #8B4513;transform:rotateY(180deg);color:#1a1a2e}
+.card-front.chance{border-color:#e91e63}
+.card-front.community{border-color:#2196f3}
+.card-front .card-icon{font-size:40px;margin-bottom:8px}
+.card-front .card-text{font-size:16px;font-weight:bold;line-height:1.4}
+.card-front .card-tag{font-size:11px;color:#888;margin-top:12px}
 /* Mobile */
 @media(max-width:820px){
 #app{flex-direction:column;align-items:center;padding:8px;gap:8px}
@@ -132,6 +147,22 @@ canvas{width:100%!important;height:auto!important}
 <div id="auction-result" style="display:none">
 <h3 id="auction-winner-text"></h3>
 <button class="bid-btn" onclick="endAuction()" style="margin-top:8px">确定</button>
+</div>
+</div>
+</div>
+
+<div id="card-overlay" onclick="dismissCard()">
+<div id="card-popup">
+<div id="card-inner">
+<div class="card-face card-back">
+<div class="card-pattern">🃏</div>
+<div class="card-type" id="card-type-label">机会</div>
+</div>
+<div class="card-face card-front" id="card-front">
+<div class="card-icon" id="card-icon">🎲</div>
+<div class="card-text" id="card-text"></div>
+<div class="card-tag">点击任意处继续</div>
+</div>
 </div>
 </div>
 </div>
@@ -257,7 +288,8 @@ switch(s.type){
 case'property':case'railroad':case'utility':
 if(s.owner===null){gamePhase='buy';hint('购买 '+s.name+' ($'+s.price+')？');}
 else if(s.owner!==p.id){payRent(p,s);checkBankrupt(p);gamePhase='result';}
-else{gamePhase='build';hint('你拥有 '+s.name+'，可以建房');}
+else if(s.type==='property'){gamePhase='build';hint('你拥有 '+s.name+'，可以建房');}
+else{gamePhase='result';hint('你拥有 '+s.name);}
 break;
 case'tax':p.money-=s.amount;log(p.name+' 缴税 $'+s.amount);checkBankrupt(p);gamePhase='result';hint(p.name+' 缴税 $'+s.amount);break;
 case'chance':drawCard(p,'chance');break;
@@ -285,6 +317,23 @@ const deck=type==='chance'?chanceDeck:communityDeck;
 const idx=type==='chance'?chanceIdx:communityIdx;
 const card=deck[idx%deck.length];
 if(type==='chance')chanceIdx++;else communityIdx++;
+
+// Show card animation overlay
+document.getElementById('card-type-label').textContent=type==='chance'?'机会':'命运';
+document.getElementById('card-front').className='card-face card-front '+(type==='chance'?'chance':'community');
+document.getElementById('card-icon').textContent=type==='chance'?'❓':'📬';
+document.getElementById('card-text').textContent=card.text;
+window._pendingCard={p,card,type};
+document.getElementById('card-overlay').style.display='flex';
+setTimeout(()=>document.getElementById('card-inner').classList.add('flipped'),100);
+}
+
+function dismissCard(){
+if(!window._pendingCard)return;
+const{p,card,type}=window._pendingCard;
+window._pendingCard=null;
+document.getElementById('card-overlay').style.display='none';
+document.getElementById('card-inner').classList.remove('flipped');
 const msg=card.act(p);
 log(p.name+' ['+(type==='chance'?'机会':'命运')+'] '+card.text+' → '+msg);
 checkBankrupt(p);
@@ -401,7 +450,15 @@ gamePhase='result';updateUI();
 function startAuction(space){
 const alive=players.filter(p=>!p.bankrupt);
 if(alive.length<=1){gamePhase='result';updateUI();return;}
-auctionState={space,currentBid:0,highestBidder:null,bidderOrder:alive.map(p=>p.id),currentBidderIdx:0,passed:new Set(),totalBidders:alive.length};
+// Order: start from current player, go clockwise
+const order=[];
+let idx=currentPlayer;
+for(let i=0;i<alive.length;i++){
+while(players[idx].bankrupt)idx=(idx+1)%players.length;
+if(!order.includes(idx))order.push(idx);
+idx=(idx+1)%players.length;
+}
+auctionState={space,currentBid:0,highestBidder:null,bidderOrder:order,currentBidderIdx:0,passed:new Set(),totalBidders:order.length};
 showAuctionUI();
 }
 function showAuctionUI(){
@@ -415,9 +472,10 @@ document.getElementById('auction-result').style.display='none';
 function updateAuctionDisplay(){
 document.getElementById('auction-bid').textContent=auctionState.currentBid;
 const bid=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
-document.getElementById('auction-bidder').textContent=bid.name+' 请出价';
+document.getElementById('auction-bidder').textContent=bid.name+' 请出价（高于 $'+(auctionState.currentBid||0)+'）';
 document.getElementById('auction-amount').min=auctionState.currentBid+1;
-document.getElementById('auction-amount').value=auctionState.currentBid+1;
+document.getElementById('auction-amount').value=Math.max(bid.money, auctionState.currentBid+1);
+document.getElementById('auction-amount').placeholder='出价金额';
 }
 function placeBid(){
 const amount=parseInt(document.getElementById('auction-amount').value);
