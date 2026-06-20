@@ -89,23 +89,34 @@ canvas{border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,0.5),0 0 0 3px #2a2a
 #winner-box button:hover{transform:scale(1.05);box-shadow:0 8px 24px rgba(255,215,0,0.4)}
 @keyframes popIn{0%{transform:scale(0.5);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
 /* Mobile */
-@media(max-width:820px){
-#app{flex-direction:column;align-items:center;padding:8px;gap:8px}
-#board-container{width:100%;max-width:500px}
-canvas{width:100%!important;height:auto!important}
-#panel{width:100%;max-width:500px}
-.player-name{font-size:13px}
-.player-money{font-size:15px}
-.btn{font-size:14px;padding:10px}
-.btn-roll{font-size:16px;padding:12px}
-.dice-face{width:44px;height:44px;font-size:24px}
-#setup-box{padding:20px}
+@media(max-width:900px) and (orientation:landscape){
+#app{flex-direction:row;padding:4px;gap:6px;height:100vh;align-items:center}
+#board-container{flex:0 0 auto}
+canvas{width:62vh!important;height:62vh!important;border-radius:8px}
+#panel{flex:1;min-width:180px;max-width:220px;padding:8px;font-size:11px;overflow-y:auto;max-height:100vh}
+#panel h2{font-size:14px;margin-bottom:6px}
+.player-card{padding:6px;margin-bottom:4px}
+.player-name{font-size:11px}
+.player-money{font-size:13px}
+.player-prop{font-size:9px}
+.player-avatar{width:24px;height:24px}
+.btn{padding:8px;font-size:12px;margin:4px 0}
+.btn-roll{padding:10px;font-size:14px}
+.dice-face{width:36px;height:36px;font-size:20px}
+#dice-display{gap:8px}
+#game-log{max-height:60px;font-size:10px}
+#setup-box{max-width:90vw;padding:16px}
 #setup-box h1{font-size:28px}
-#setup-box input{width:130px;font-size:14px}
+#setup-box input{width:100px;font-size:13px;padding:6px 10px}
 }
-@media(max-width:400px){
-#setup-box input{width:100px}
-#setup-box h1{font-size:24px}
+@media(max-width:900px) and (orientation:portrait){
+#app{flex-direction:column;padding:8px;gap:8px;align-items:center}
+canvas{width:90vw!important;height:90vw!important}
+#panel{width:90vw;max-width:400px}
+body::before{content:'📱 请将手机横屏以获得最佳体验';display:block;text-align:center;color:#ffd700;padding:12px;font-size:14px;font-weight:bold;animation:pulse 2s ease-in-out infinite;background:rgba(20,20,40,0.9)}
+#setup-box{padding:20px;max-width:95vw}
+#setup-box h1{font-size:28px}
+#setup-box input{width:100px;font-size:14px}
 }
 </style>
 </head>
@@ -780,6 +791,8 @@ function startGame(){
 const n=parseInt(document.getElementById('player-count').value),names=[],colors=[];
 for(let i=0;i<n;i++){names.push(document.getElementById('pname-'+i).value||'玩家'+(i+1));const sel=document.querySelector('#pcolor-'+i+' .color-dot.selected');colors.push(sel?COLORS[parseInt(sel.dataset.c)]:COLORS[i]);}
 document.getElementById('setup-screen').style.display='none';document.getElementById('app').style.display='flex';
+// Lock landscape on mobile
+if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
 canvas=document.getElementById('board');ctx=canvas.getContext('2d');
 const isMobile=window.innerWidth<820,mw=isMobile?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);
 BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;
