@@ -29,6 +29,7 @@ canvas{border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,0.5),0 0 0 3px #2a2a
 .btn-pass{background:linear-gradient(135deg,#f44336,#c62828);color:#fff}
 .btn-build{background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff}
 .btn-continue{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e}
+.btn-bail{background:linear-gradient(135deg,#ff9800,#e65100);color:#fff}
 .btn-exit{background:transparent;color:#555;font-size:11px;padding:4px 8px;margin-top:12px;border:1px solid #333;opacity:0.5;float:right}
 .btn:disabled{opacity:0.35;cursor:not-allowed;transform:none}
 #dice-area{text-align:center;margin:8px 0}
@@ -165,6 +166,7 @@ canvas{width:90vw!important;height:90vw!important}
 <button class="btn btn-pass" id="btn-pass" style="display:none">⏭ 跳过 (拍卖)</button>
 <button class="btn btn-build" id="btn-build" style="display:none">🏗 建造房屋</button>
 <button class="btn btn-continue" id="btn-continue" style="display:none">▶ 继续</button>
+<button class="btn btn-bail" id="btn-bail" style="display:none">💰 保释 $50</button>
 <div id="game-log"><div>欢迎来到大富翁！</div></div>
 <button class="btn btn-exit" id="btn-exit">🚪 退出游戏</button>
 </div>
@@ -261,7 +263,7 @@ const SPACES=[
 
 const CHANCE_CARDS=[
 {text:'银行发放红利 $150',act:p=>{p.money+=150;return'获得 $150'}},
-{text:'前进到起点',act:p=>{movePlayerTo(p,0);p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 前进到起点 +$200');return'前进到起点 +$200'}},
+{text:'前进到起点',act:p=>{movePlayerTo(p,0);return'前进到起点 +$200'}},
 {text:'后退 3 格',act:p=>{movePlayerBack(p,3);return'后退 3 格'}},
 {text:'缴纳税款 $75',act:p=>{p.money-=75;return'缴税 $75'}},
 {text:'前进到免费停车',act:p=>{movePlayerTo(p,20);return'前进到免费停车'}},
@@ -291,7 +293,7 @@ const COMMUNITY_CARDS=[
 {text:'出售旧货 $50',act:p=>{p.money+=50;return'获得 $50'}},
 {text:'获得 $25',act:p=>{p.money+=25;return'获得 $25'}},
 {text:'进监狱！',act:p=>{sendToJail(p);return'进监狱！'}},
-{text:'前进到起点',act:p=>{movePlayerTo(p,0);p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 前进到起点 +$200');return'前进到起点 +$200'}},
+{text:'前进到起点',act:p=>{movePlayerTo(p,0);return'前进到起点 +$200'}},
 {text:'获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
 {text:'生日礼物 $10',act:p=>{p.money+=10;return'获得 $10'}}
 ];
@@ -324,18 +326,20 @@ const startPos=p.position;
 const steps=targetPos>=startPos?targetPos-startPos:targetPos+40-startPos;
 if(steps===0){onDone();return;}
 cardWalking=true;
-let step=0;
+let step=0,passedGo=false;
 const stepTime=steps>20?Math.max(40,2000/steps):150,startTime=performance.now();
 function frame(ts){
 const newStep=Math.min(Math.floor((ts-startTime)/stepTime),steps);
 if(newStep>step){
 step=newStep;p.position=(startPos+step)%40;
+if(startPos+step>=40&&!passedGo){passedGo=true;p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 经过起点 +$200');}
 }
 p.animPos=startPos+((ts-startTime)/(steps*stepTime))*steps;
 drawBoard();
 if(step<steps){animFrame=requestAnimationFrame(frame);}
 else{
 p.position=targetPos;p.animPos=targetPos;
+if(!passedGo&&startPos+steps>=40){p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 经过起点 +$200');}
 animFrame=null;cardWalking=false;
 drawBoard();
 onDone();
@@ -567,9 +571,20 @@ setTimeout(()=>{document.getElementById('die1').classList.remove('rolling');docu
 log(p.name+' 掷出 '+diceValues[0]+'+'+diceValues[1]+'='+total);
 
 if(p.inJail){
-if(diceValues[0]===diceValues[1]){p.inJail=false;p.jailTurns=0;log(p.name+' 掷出对子，出狱！');}
-else{p.jailTurns++;if(p.jailTurns>=3){p.money-=50;p.inJail=false;p.jailTurns=0;log(p.name+' 缴纳 $50 保释金');checkBankrupt(p);}
-else{log(p.name+' 仍在狱中');gamePhase='result';hint(p.name+' 仍在狱中');updateUI();return;}}
+// Pre-check: 3次失败后第4回合强制缴保释金
+if(p.jailTurns>=3){
+p.money-=50;p.inJail=false;p.jailTurns=0;
+log(p.name+' 缴纳 $50 保释金（强制出狱）');
+checkBankrupt(p);
+// Fall through to roll normally
+}else if(diceValues[0]===diceValues[1]){
+p.inJail=false;p.jailTurns=0;log(p.name+' 掷出对子，出狱！');
+}else{
+p.jailTurns++;
+log(p.name+' 仍在狱中（第'+p.jailTurns+'次）');
+gamePhase='result';hint(p.name+' 仍在狱中，可交$50保释');
+updateUI();return;
+}
 }
 
 if(diceValues[0]===diceValues[1]){doublesCount++;if(doublesCount>=3){sendToJail(p);log(p.name+' 连续三对，进监狱！');gamePhase='result';updateUI();return;}}
@@ -712,6 +727,16 @@ log('🔨 拍卖: '+w.name+' $'+b+' → '+s.name);
 }
 }
 function endAuction(){document.getElementById('auction-overlay').style.display='none';auctionState=null;gamePhase='result';updateUI();}
+
+function payBail(){
+const p=players[currentPlayer];
+if(!p.inJail||p.money<50||p.jailTurns>=3)return;
+p.money-=50;p.inJail=false;p.jailTurns=0;
+log(p.name+' 缴纳 $50 保释金，出狱！');
+checkBankrupt(p);
+hint(p.name+' 已出狱，掷骰子吧');
+updateUI();
+}
 
 function advancePlayer(){
 if(gamePhase==='gameover')return;
@@ -959,6 +984,8 @@ btnPass.style.display=(gamePhase==='buy'||gamePhase==='build')?'block':'none';
 btnPass.textContent=gamePhase==='buy'?'⏭ 跳过 (拍卖)':'⏭ 跳过';
 btnBuild.style.display=gamePhase==='build'?'block':'none';
 btnContinue.style.display=gamePhase==='result'?'block':'none';
+const bailBtn=document.getElementById('btn-bail');
+bailBtn.style.display=(gamePhase==='roll'&&players[currentPlayer]&&players[currentPlayer].inJail&&players[currentPlayer].jailTurns<3)?'block':'none';
 
 if(gamePhase==='gameover'){
 btnRoll.style.display='none';btnBuy.style.display='none';btnPass.style.display='none';
@@ -1078,6 +1105,7 @@ document.getElementById('btn-end-auction').addEventListener('click', endAuction)
 document.getElementById('card-overlay').addEventListener('click', dismissCard);
 document.getElementById('btn-restart').addEventListener('click', ()=>{clearSave();location.reload();});
 document.getElementById('btn-exit').addEventListener('click', exitGame);
+document.getElementById('btn-bail').addEventListener('click', payBail);
 window.addEventListener('resize',()=>{if(canvas){const isM=window.innerWidth<820,mw=isM?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;drawBoard();}});
 </script>
 </body>
