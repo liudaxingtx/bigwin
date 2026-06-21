@@ -29,6 +29,7 @@ canvas{border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,0.5),0 0 0 3px #2a2a
 .btn-pass{background:linear-gradient(135deg,#f44336,#c62828);color:#fff}
 .btn-build{background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff}
 .btn-continue{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e}
+.btn-exit{background:linear-gradient(135deg,#555,#333);color:#aaa;font-size:12px;padding:6px 12px;margin-top:8px}
 .btn:disabled{opacity:0.35;cursor:not-allowed;transform:none}
 #dice-area{text-align:center;margin:8px 0}
 #dice-display{display:flex;justify-content:center;gap:12px;margin:8px 0}
@@ -164,6 +165,7 @@ canvas{width:90vw!important;height:90vw!important}
 <button class="btn btn-pass" id="btn-pass" style="display:none">⏭ 跳过 (拍卖)</button>
 <button class="btn btn-build" id="btn-build" style="display:none">🏗 建造房屋</button>
 <button class="btn btn-continue" id="btn-continue" style="display:none">▶ 继续</button>
+<button class="btn btn-exit" id="btn-exit">🚪 退出游戏</button>
 <div id="game-log"><div>欢迎来到大富翁！</div></div>
 </div>
 </div>
@@ -713,6 +715,19 @@ gamePhase='roll';hint('轮到 '+players[currentPlayer].name);
 updateUI();
 }
 
+function exitGame(){
+clearSave();
+localStorage.removeItem('bigwin_save');
+document.getElementById('app').style.display='none';
+document.getElementById('setup-screen').style.display='flex';
+document.getElementById('winner-overlay').style.display='none';
+document.getElementById('auction-overlay').style.display='none';
+document.getElementById('card-overlay').style.display='none';
+if(animFrame)cancelAnimationFrame(animFrame);
+animFrame=null;cardWalking=false;
+players=[];currentPlayer=0;gamePhase='roll';doublesCount=0;auctionState=null;
+}
+
 // Drawing
 function getSpacePos(i){
 if(i<=10)return{row:10,col:10-i,rot:0};
@@ -1054,6 +1069,7 @@ document.getElementById('btn-pass-bid').addEventListener('click', passBid);
 document.getElementById('btn-end-auction').addEventListener('click', endAuction);
 document.getElementById('card-overlay').addEventListener('click', dismissCard);
 document.getElementById('btn-restart').addEventListener('click', ()=>{clearSave();location.reload();});
+document.getElementById('btn-exit').addEventListener('click', exitGame);
 window.addEventListener('resize',()=>{if(canvas){const isM=window.innerWidth<820,mw=isM?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;drawBoard();}});
 </script>
 </body>
