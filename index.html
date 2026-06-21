@@ -421,7 +421,7 @@ updateUI();
 function payRent(p,s){
 let rent=0;
 if(s.type==='railroad'){const n=SPACES.filter(sp=>sp.type==='railroad'&&sp.owner===s.owner).length;rent=[25,50,100,200][n-1];}
-else if(s.type==='utility'){const n=SPACES.filter(sp=>sp.type==='utility'&&sp.owner===s.owner).length;rent=n===2?diceValues[0]*10+10:diceValues[0]*4;}
+else if(s.type==='utility'){const n=SPACES.filter(sp=>sp.type==='utility'&&sp.owner===s.owner).length;const total=diceValues[0]+diceValues[1];rent=n===2?total*10:total*4;}
 else{rent=s.rent[Math.min(s.houses||0,5)];}
 p.money-=rent;players[s.owner].money+=rent;
 moneyAnim('-$'+rent,'#f44336');
@@ -491,7 +491,7 @@ popup.style.left='';popup.style.top='';popup.style.transform='';popup.style.opac
 const prevPhase=gamePhase;
 const msg=card.act(p);
 log(p.name+' ['+(type==='chance'?'机会':'命运')+'] '+card.text+' → '+msg);
-checkBankrupt(p);
+checkAllBankrupts();
 // If card triggered a walk animation, let the callback handle landOnSpace + updateUI
 if(cardWalking){
 // Animation callback will call landOnSpace → sets gamePhase → updateUI
@@ -530,10 +530,14 @@ document.getElementById('winner-overlay').style.display='flex';
 }
 }
 }
+function checkAllBankrupts(){
+players.forEach(p=>{if(!p.bankrupt)checkBankrupt(p);});
+}
 
 function continueTurn(){
 if(gamePhase==='gameover')return;
-if(diceValues[0]===diceValues[1]&&!players[currentPlayer].inJail){
+if(doublesCount>0&&!players[currentPlayer].inJail){
+// 上轮掷出对子，获得额外一回合
 log(players[currentPlayer].name+' 掷出对子，再掷一次！');
 gamePhase='roll';hint('对子！'+players[currentPlayer].name+' 再掷一次');
 }else{
@@ -545,6 +549,7 @@ updateUI();
 // Dice & Walking Animation
 function rollDice(){
 if(gamePhase==='gameover')return;
+if(cardWalking||animFrame)return; // 动画进行中，禁止掷骰
 const p=players[currentPlayer];
 if(p.bankrupt){advancePlayer();return;}
 diceValues=[Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1];
@@ -561,7 +566,7 @@ log(p.name+' 掷出 '+diceValues[0]+'+'+diceValues[1]+'='+total);
 
 if(p.inJail){
 if(diceValues[0]===diceValues[1]){p.inJail=false;p.jailTurns=0;log(p.name+' 掷出对子，出狱！');}
-else{p.jailTurns++;if(p.jailTurns>=3){p.money-=50;p.inJail=false;p.jailTurns=0;log(p.name+' 缴纳 $50 保释金');}
+else{p.jailTurns++;if(p.jailTurns>=3){p.money-=50;p.inJail=false;p.jailTurns=0;log(p.name+' 缴纳 $50 保释金');checkBankrupt(p);}
 else{log(p.name+' 仍在狱中');gamePhase='result';hint(p.name+' 仍在狱中');updateUI();return;}}
 }
 
@@ -923,7 +928,9 @@ const btnRoll=document.getElementById('btn-roll'),btnBuy=document.getElementById
 const btnPass=document.getElementById('btn-pass'),btnBuild=document.getElementById('btn-build');
 const btnContinue=document.getElementById('btn-continue');
 
-btnRoll.style.display=gamePhase==='roll'?'block':'none';
+const isAnim=cardWalking||animFrame;
+btnRoll.style.display=(gamePhase==='roll'&&!isAnim)?'block':'none';
+btnRoll.disabled=isAnim;
 btnBuy.style.display=gamePhase==='buy'?'block':'none';
 btnPass.style.display=(gamePhase==='buy'||gamePhase==='build')?'block':'none';
 btnPass.textContent=gamePhase==='buy'?'⏭ 跳过 (拍卖)':'⏭ 跳过';
