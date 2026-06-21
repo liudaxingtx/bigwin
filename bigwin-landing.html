@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BigWin — 经典大富翁 · AI 驱动</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Azeret+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #000000;
+  --white: #ffffff;
+  --blue: #0099ff;
+  --silver: #a6a6a6;
+  --frost: rgba(255,255,255,0.1);
+  --glow: rgba(0,153,255,0.15);
+  --elevated: 0.5px 0.5px 0 rgba(255,255,255,0.1), 0 10px 30px rgba(0,0,0,0.25);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--void);color:var(--white);font-family:'Inter',system-ui,-apple-system,sans-serif;overflow-x:hidden}
+::selection{background:var(--blue);color:var(--void)}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(0,0,0,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06)}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:16px 24px}
+.nav-logo{font-family:'Azeret Mono',monospace;font-size:18px;font-weight:500;letter-spacing:-0.5px;color:var(--white)}
+.nav-logo span{color:var(--blue)}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{color:var(--silver);text-decoration:none;font-size:14px;font-weight:400;transition:color 0.2s}
+.nav-links a:hover{color:var(--white)}
+.nav-cta{background:var(--white);color:var(--void);padding:8px 20px;border-radius:100px;font-size:13px;font-weight:600;text-decoration:none;transition:transform 0.2s,box-shadow 0.2s}
+.nav-cta:hover{transform:scale(1.04);box-shadow:0 0 24px rgba(0,153,255,0.3)}
+
+/* Hero */
+.hero{padding:160px 24px 100px;text-align:center;max-width:900px;margin:0 auto}
+.hero-badge{display:inline-block;background:var(--frost);color:var(--blue);font-size:11px;font-weight:600;padding:6px 16px;border-radius:100px;letter-spacing:0.5px;margin-bottom:24px;text-transform:uppercase}
+.hero h1{font-family:'Inter',system-ui,sans-serif;font-size:clamp(42px,8vw,96px);font-weight:600;letter-spacing:-3px;line-height:0.9;margin-bottom:24px}
+.hero h1 span{color:var(--blue)}
+.hero p{color:var(--silver);font-size:18px;line-height:1.6;max-width:560px;margin:0 auto 36px;font-weight:300}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--white);color:var(--void);padding:14px 36px;border-radius:100px;font-size:15px;font-weight:600;text-decoration:none;transition:all 0.25s;border:none;cursor:pointer}
+.btn-primary:hover{transform:scale(1.04);box-shadow:0 0 32px rgba(0,153,255,0.25)}
+.btn-ghost{background:var(--frost);color:var(--white);padding:14px 36px;border-radius:100px;font-size:15px;font-weight:500;text-decoration:none;transition:all 0.25s}
+.btn-ghost:hover{background:rgba(255,255,255,0.15)}
+
+/* Game Preview */
+.preview{max-width:1100px;margin:0 auto;padding:0 24px 80px}
+.preview-inner{background:rgba(9,9,9,0.8);border-radius:16px;border:1px solid var(--glow);padding:32px;box-shadow:var(--elevated)}
+.preview-label{font-family:'Azeret Mono',monospace;font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.preview-card{background:var(--void);border-radius:12px;padding:24px;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.3s}
+.preview-card:hover{border-color:var(--glow)}
+.preview-card .icon{font-size:28px;margin-bottom:12px}
+.preview-card h4{font-size:16px;font-weight:600;margin-bottom:6px;letter-spacing:-0.3px}
+.preview-card p{color:var(--silver);font-size:13px;line-height:1.5}
+
+/* Features */
+.features{max-width:1100px;margin:0 auto;padding:0 24px 100px}
+.features h2{font-size:clamp(28px,5vw,48px);font-weight:600;letter-spacing:-1.5px;text-align:center;margin-bottom:48px}
+.features h2 span{color:var(--blue)}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.feature-card{background:rgba(9,9,9,0.5);border-radius:14px;padding:28px;border:1px solid rgba(255,255,255,0.06);transition:all 0.3s}
+.feature-card:hover{border-color:var(--glow);transform:translateY(-2px)}
+.feature-card .ft-icon{font-size:32px;margin-bottom:16px}
+.feature-card h5{font-size:17px;font-weight:600;margin-bottom:8px;letter-spacing:-0.3px}
+.feature-card p{color:var(--silver);font-size:13px;line-height:1.5}
+
+/* CTA Banner */
+.cta-banner{max-width:900px;margin:0 auto 100px;text-align:center;padding:60px 24px;background:radial-gradient(ellipse at center,rgba(0,153,255,0.08) 0%,transparent 70%);border-radius:24px;border:1px solid var(--glow)}
+.cta-banner h3{font-size:clamp(24px,4vw,40px);font-weight:600;letter-spacing:-1px;margin-bottom:16px}
+.cta-banner p{color:var(--silver);font-size:15px;margin-bottom:32px}
+.cta-banner .btn-primary{font-size:17px;padding:16px 48px}
+
+/* Footer */
+footer{max-width:1100px;margin:0 auto;padding:40px 24px;text-align:center;border-top:1px solid rgba(255,255,255,0.06)}
+footer p{color:rgba(255,255,255,0.3);font-size:12px}
+footer a{color:var(--silver);text-decoration:none}
+
+@media(max-width:768px){
+  .hero{padding:120px 20px 60px}
+  .hero h1{letter-spacing:-2px}
+  .preview-grid{grid-template-columns:1fr}
+  .nav-links{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">Big<span>Win</span></div>
+    <div class="nav-links">
+      <a href="#features">特色</a>
+      <a href="#preview">预览</a>
+      <a href="https://liudaxingtx.github.io/bigwin/" target="_blank">试玩</a>
+      <a href="https://github.com/liudaxingtx/bigwin" target="_blank">GitHub</a>
+      <a href="https://liudaxingtx.github.io/bigwin/" class="nav-cta" target="_blank">开始游戏 →</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">🃏 经典重制 · AI 驱动</div>
+  <h1>大富翁<br><span>BigWin</span></h1>
+  <p>多人热座对战大富翁，Canvas 渲染 · 卡通棋子 · 逐格动画 · 卡牌翻牌 · 拍卖系统 · 手机横屏适配 — 全部由一个 HTML 文件驱动。</p>
+  <div class="hero-btns">
+    <a href="https://liudaxingtx.github.io/bigwin/" class="btn-primary" target="_blank">🎲 立即试玩</a>
+    <a href="https://github.com/liudaxingtx/bigwin" class="btn-ghost" target="_blank">查看源码 →</a>
+  </div>
+</section>
+
+<section class="preview" id="preview">
+  <div class="preview-inner">
+    <div class="preview-label">// GAME MECHANICS</div>
+    <div class="preview-grid">
+      <div class="preview-card">
+        <div class="icon">🎯</div>
+        <h4>经典大富翁规则</h4>
+        <p>40格棋盘 · 购买地产 · 收取租金 · 建造房屋/酒店 · 铁路/公用事业 · 机会/命运卡牌</p>
+      </div>
+      <div class="preview-card">
+        <div class="icon">👥</div>
+        <h4>2-6人热座对战</h4>
+        <p>同一设备多人轮流操作，卡通棋子 + 逐格步行动画 + 掷骰子对子连掷机制</p>
+      </div>
+      <div class="preview-card">
+        <div class="icon">🔨</div>
+        <h4>完整拍卖系统</h4>
+        <p>空地不买触发拍卖 · 顺时针自由出价 · 资金不足自动放弃 · 智能默认出价</p>
+      </div>
+      <div class="preview-card">
+        <div class="icon">✨</div>
+        <h4>全动画体验</h4>
+        <p>卡牌翻转 · 警车押送 · 金币浮动 · 走位动画 · 拍卖界面 · 胜利弹窗 — 全部原生 Canvas + CSS</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <h2>为什么选择 <span>BigWin</span></h2>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="ft-icon">📱</div>
+      <h5>手机横屏适配</h5>
+      <p>自动全屏横屏锁定 · 竖屏遮罩提醒 · Canvas 自适应缩放 · 触控友好按钮</p>
+    </div>
+    <div class="feature-card">
+      <div class="ft-icon">💾</div>
+      <h5>刷新不掉进度</h5>
+      <p>localStorage 自动存档 · 玩家位置/金钱/地产归属全部持久化 · 游戏结束自动清档</p>
+    </div>
+    <div class="feature-card">
+      <div class="ft-icon">🎨</div>
+      <h5>手绘卡通棋子</h5>
+      <p>每个玩家独立卡通形象 · 圆头+眼睛+微笑+帽子+编号 · 金色光圈标识当前玩家</p>
+    </div>
+    <div class="feature-card">
+      <div class="ft-icon">🚔</div>
+      <h5>进监狱动画</h5>
+      <p>警车从玩家位置开到监狱格子 · 1.5秒平滑动画 · 不经过起点不领工资</p>
+    </div>
+    <div class="feature-card">
+      <div class="ft-icon">🃏</div>
+      <h5>卡牌飞行动画</h5>
+      <p>抽卡从棋子位置飞向屏幕中央 · 弹性缓动 + 3D翻转 · 移动卡牌触发走位动画</p>
+    </div>
+    <div class="feature-card">
+      <div class="ft-icon">🏆</div>
+      <h5>胜利结算</h5>
+      <p>其他玩家全破产后宣布胜利 · 全屏金色弹窗 · 资产统计 · 一键再来一局</p>
+    </div>
+  </div>
+</section>
+
+<section class="cta-banner">
+  <h3>准备好成为地产大亨了吗？</h3>
+  <p>无需安装 · 无需注册 · 打开即玩 · 代码完全开源</p>
+  <a href="https://liudaxingtx.github.io/bigwin/" class="btn-primary" target="_blank">🎲 开始游戏</a>
+</section>
+
+<footer>
+  <p>Built with ❤️ by <a href="https://github.com/liudaxingtx">Da Liu</a> · Powered by <a href="https://github.com/nexu-io/open-design">Open Design</a> + <a href="https://github.com/nousresearch/hermes-agent">Hermes Agent</a></p>
+</footer>
+
+</body>
+</html>
