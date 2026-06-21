@@ -1,115 +1,115 @@
-1|<!DOCTYPE html>
-2|<html lang="zh-CN">
-3|<head>
-4|<meta charset="UTF-8">
-5|<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-6|<title>大富翁 - BigWin Monopoly</title>
-7|<style>
-8|*{margin:0;padding:0;box-sizing:border-box}
-9|body{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
-10|#app{display:flex;gap:16px;padding:16px;align-items:flex-start;max-width:1200px;margin:0 auto;width:100%;min-height:100vh}
-11|canvas{border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,0.5),0 0 0 3px #2a2a4a}
-12|#panel{background:rgba(20,20,40,0.95);border-radius:12px;padding:16px;color:#e0e0e0;width:280px;flex-shrink:0;box-shadow:0 8px 32px rgba(0,0,0,0.4);border:1px solid #333}
-13|#panel h2{color:#ffd700;font-size:18px;margin-bottom:10px;text-align:center;text-shadow:0 0 8px rgba(255,215,0,0.3)}
-14|.player-card{background:rgba(40,40,70,0.8);border-radius:8px;padding:10px;margin-bottom:8px;border:2px solid transparent;transition:all 0.3s;position:relative}
-15|.player-card.active{border-color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,0.3);background:rgba(50,40,60,0.9);animation:pulse 1.5s ease-in-out infinite}
-16|@keyframes pulse{0%,100%{box-shadow:0 0 12px rgba(255,215,0,0.3)}50%{box-shadow:0 0 24px rgba(255,215,0,0.6)}}
-17|.player-card.bankrupt{opacity:0.35}
-18|.player-avatar{width:36px;height:36px;border-radius:50%;margin-right:8px;border:2px solid #fff8}
-19|.player-info{flex:1}
-20|.player-name{font-weight:bold;font-size:14px;display:flex;align-items:center;gap:8px}
-21|.player-money{color:#4caf50;font-size:16px;font-weight:bold}
-22|.player-prop{font-size:10px;color:#aaa;margin-top:2px}
-23|.flex-row{display:flex;align-items:center}
-24|.btn{display:block;width:100%;padding:12px;margin:6px 0;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;transition:all 0.2s;letter-spacing:1px;-webkit-tap-highlight-color:transparent}
-25|.btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.4)}
-26|.btn:active{transform:translateY(0)}
-27|.btn-roll{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e;font-size:18px;padding:14px}
-28|.btn-buy{background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff}
-29|.btn-pass{background:linear-gradient(135deg,#f44336,#c62828);color:#fff}
-30|.btn-build{background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff}
-31|.btn-continue{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e}
-32|.btn:disabled{opacity:0.35;cursor:not-allowed;transform:none}
-33|#dice-area{text-align:center;margin:8px 0}
-34|#dice-display{display:flex;justify-content:center;gap:12px;margin:8px 0}
-35|.dice-face{width:52px;height:52px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#1a1a2e;box-shadow:0 4px 12px rgba(0,0,0,0.3);transition:transform 0.3s}
-36|.dice-face.rolling{animation:diceRoll 0.15s linear infinite}
-37|@keyframes diceRoll{0%{transform:rotate(0)}25%{transform:rotate(15deg)}75%{transform:rotate(-15deg)}100%{transform:rotate(0)}}
-38|#action-hint{text-align:center;font-size:14px;color:#ffd700;min-height:24px;margin:6px 0;font-weight:bold}
-39|#game-log{background:rgba(0,0,0,0.3);border-radius:8px;padding:8px;max-height:120px;overflow-y:auto;font-size:11px;color:#999;margin-top:8px}
-40|#game-log div{margin:1px 0;padding:2px 0;border-bottom:1px solid #333}
-41|.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#ffd700;color:#1a1a2e;padding:10px 20px;border-radius:8px;font-weight:bold;z-index:200;animation:slideDown 0.3s ease-out,fadeOut 0.5s 2s forwards}
-42|@keyframes slideDown{from{top:-40px;opacity:0}to{top:16px;opacity:1}}
-43|@keyframes fadeOut{to{opacity:0}}
-44|#setup-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);display:flex;justify-content:center;align-items:center;z-index:100;padding:16px}
-45|#setup-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:28px;text-align:center;color:#fff;border:2px solid #ffd700;box-shadow:0 16px 48px rgba(255,215,0,0.2);max-width:720px;width:100%}
-46|#setup-box h1{font-size:36px;color:#ffd700;margin-bottom:6px;text-shadow:0 0 16px rgba(255,215,0,0.4)}
-47|#setup-box h3{color:#aaa;margin-bottom:16px;font-weight:normal;font-size:14px}
-48|#setup-box input{padding:8px 12px;border-radius:8px;border:1px solid #555;background:#222;color:#fff;font-size:14px;width:100%;box-sizing:border-box}
-49|#setup-box select{padding:8px 14px;border-radius:8px;border:1px solid #555;background:#222;color:#fff;font-size:15px;margin:8px}
-50|#player-inputs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin:12px 0}
-51|.player-setup-card{background:rgba(40,40,70,0.6);border-radius:10px;padding:10px;text-align:center;border:1px solid #444}
-52|.player-setup-card .setup-label{display:block;margin:0 0 4px;color:#aaa;font-size:11px;text-align:center}
-53|.player-setup-card input{width:100%;margin:0}
-54|.player-setup-card .color-pick{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin:6px 0 0}
-55|.btn-start{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e;font-size:20px;padding:12px 40px;margin-top:12px;border:none;border-radius:10px;cursor:pointer;font-weight:bold;transition:all 0.3s}
-56|.btn-start:hover{transform:scale(1.04);box-shadow:0 8px 24px rgba(255,215,0,0.4)}
-57|.setup-label{display:block;margin:8px 0 4px;color:#ccc;font-size:13px}
-58|.color-pick{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:6px 0}
-59|.color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all 0.2s}
-60|.color-dot.selected{border-color:#fff;transform:scale(1.15)}
-61|/* Auction */
-62|#auction-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.82);z-index:300;justify-content:center;align-items:center}
-63|#auction-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #ffd700;border-radius:16px;padding:24px;text-align:center;color:#fff;min-width:280px;max-width:90vw;box-shadow:0 16px 48px rgba(255,215,0,0.25)}
-64|#auction-box h2{color:#ffd700;margin-bottom:6px}
-65|#auction-box h3{color:#fff;margin-bottom:12px;font-size:16px}
-66|#auction-box .current-bid{font-size:24px;color:#4caf50;font-weight:bold;margin:8px 0}
-67|#auction-box .bidder-name{color:#ffd700;font-size:16px;margin:8px 0}
-68|#auction-box input{padding:8px 14px;border-radius:8px;border:1px solid #555;background:#222;color:#fff;font-size:16px;width:120px;text-align:center;margin:8px}
-69|.bid-btn{background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;padding:8px 24px;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin:4px}
-70|.pass-bid-btn{background:linear-gradient(135deg,#f44336,#c62828);color:#fff;padding:8px 24px;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin:4px}
-71|
-72|/* Card draw animation */
-73|#card-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:250;justify-content:center;align-items:center}
-74|#card-popup{position:fixed;width:260px;height:360px;perspective:600px;transition:all 0.5s cubic-bezier(0.34,1.56,0.64,1);z-index:251}
-75|#card-popup.fly-in{transition:all 0.6s cubic-bezier(0.22,0.61,0.36,1)}
-76|#card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d}
-77|#card-inner.flipped{transform:rotateY(180deg)}
-78|.card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.5)}
-79|.card-back{background:linear-gradient(135deg,#e91e63,#9c27b0);border:3px solid #ffd700}
-80|.card-back .card-pattern{font-size:60px}
-81|.card-back .card-type{color:#ffd700;font-size:14px;font-weight:bold;margin-top:8px}
-82|.card-front{background:#fffdf0;border:3px solid #8B4513;transform:rotateY(180deg);color:#1a1a2e}
-83|.card-front.chance{border-color:#e91e63}
-84|.card-front.community{border-color:#2196f3}
-85|.card-front .card-icon{font-size:40px;margin-bottom:8px}
-86|.card-front .card-text{font-size:16px;font-weight:bold;line-height:1.4}
-87|.card-front .card-tag{font-size:11px;color:#888;margin-top:12px}
-88|/* Winner overlay */
-89|#winner-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:400;justify-content:center;align-items:center}
-90|#winner-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border:3px solid #ffd700;border-radius:24px;padding:40px;text-align:center;color:#fff;box-shadow:0 20px 80px rgba(255,215,0,0.4);animation:popIn 0.5s ease-out}
-91|#winner-box h1{font-size:48px;color:#ffd700;margin-bottom:8px;text-shadow:0 0 20px rgba(255,215,0,0.5)}
-92|#winner-box .winner-name{font-size:32px;font-weight:bold;margin:16px 0 8px}
-93|#winner-box .winner-stats{color:#aaa;font-size:14px;margin-bottom:20px}
-94|#winner-box button{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e;font-size:18px;padding:12px 36px;border:none;border-radius:10px;cursor:pointer;font-weight:bold;transition:all 0.3s}
-95|#winner-box button:hover{transform:scale(1.05);box-shadow:0 8px 24px rgba(255,215,0,0.4)}
-96|@keyframes popIn{0%{transform:scale(0.5);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
-97|/* Mobile */
-98|@media(max-width:900px) and (orientation:landscape){
-99|#app{flex-direction:row;padding:6px;gap:16px;height:100vh;align-items:center}
-100|#board-container{flex:0 0 auto}
-101|canvas{width:100vh!important;height:100vh!important;border-radius:8px;margin:0}
-102|#panel{flex:1;min-width:170px;max-width:240px;padding:10px;font-size:12px;overflow-y:auto;max-height:100vh}
-103|#panel h2{font-size:14px;margin-bottom:6px}
-104|.player-card{padding:6px;margin-bottom:4px}
-105|.player-name{font-size:11px}
-106|.player-money{font-size:13px}
-107|.player-prop{font-size:9px}
-108|.player-avatar{width:24px;height:24px}
-109|.btn{padding:8px;font-size:12px;margin:4px 0}
-110|.btn-roll{padding:10px;font-size:14px}
-111|.dice-face{width:36px;height:36px;font-size:20px}
-112|#dice-display{gap:8px}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>大富翁 - BigWin Monopoly</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+#app{display:flex;gap:16px;padding:16px;align-items:flex-start;max-width:1200px;margin:0 auto;width:100%;min-height:100vh}
+canvas{border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,0.5),0 0 0 3px #2a2a4a}
+#panel{background:rgba(20,20,40,0.95);border-radius:12px;padding:16px;color:#e0e0e0;width:280px;flex-shrink:0;box-shadow:0 8px 32px rgba(0,0,0,0.4);border:1px solid #333}
+#panel h2{color:#ffd700;font-size:18px;margin-bottom:10px;text-align:center;text-shadow:0 0 8px rgba(255,215,0,0.3)}
+.player-card{background:rgba(40,40,70,0.8);border-radius:8px;padding:10px;margin-bottom:8px;border:2px solid transparent;transition:all 0.3s;position:relative}
+.player-card.active{border-color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,0.3);background:rgba(50,40,60,0.9);animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 12px rgba(255,215,0,0.3)}50%{box-shadow:0 0 24px rgba(255,215,0,0.6)}}
+.player-card.bankrupt{opacity:0.35}
+.player-avatar{width:36px;height:36px;border-radius:50%;margin-right:8px;border:2px solid #fff8}
+.player-info{flex:1}
+.player-name{font-weight:bold;font-size:14px;display:flex;align-items:center;gap:8px}
+.player-money{color:#4caf50;font-size:16px;font-weight:bold}
+.player-prop{font-size:10px;color:#aaa;margin-top:2px}
+.flex-row{display:flex;align-items:center}
+.btn{display:block;width:100%;padding:12px;margin:6px 0;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;transition:all 0.2s;letter-spacing:1px;-webkit-tap-highlight-color:transparent}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.4)}
+.btn:active{transform:translateY(0)}
+.btn-roll{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e;font-size:18px;padding:14px}
+.btn-buy{background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff}
+.btn-pass{background:linear-gradient(135deg,#f44336,#c62828);color:#fff}
+.btn-build{background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff}
+.btn-continue{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e}
+.btn:disabled{opacity:0.35;cursor:not-allowed;transform:none}
+#dice-area{text-align:center;margin:8px 0}
+#dice-display{display:flex;justify-content:center;gap:12px;margin:8px 0}
+.dice-face{width:52px;height:52px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#1a1a2e;box-shadow:0 4px 12px rgba(0,0,0,0.3);transition:transform 0.3s}
+.dice-face.rolling{animation:diceRoll 0.15s linear infinite}
+@keyframes diceRoll{0%{transform:rotate(0)}25%{transform:rotate(15deg)}75%{transform:rotate(-15deg)}100%{transform:rotate(0)}}
+#action-hint{text-align:center;font-size:14px;color:#ffd700;min-height:24px;margin:6px 0;font-weight:bold}
+#game-log{background:rgba(0,0,0,0.3);border-radius:8px;padding:8px;max-height:120px;overflow-y:auto;font-size:11px;color:#999;margin-top:8px}
+#game-log div{margin:1px 0;padding:2px 0;border-bottom:1px solid #333}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#ffd700;color:#1a1a2e;padding:10px 20px;border-radius:8px;font-weight:bold;z-index:200;animation:slideDown 0.3s ease-out,fadeOut 0.5s 2s forwards}
+@keyframes slideDown{from{top:-40px;opacity:0}to{top:16px;opacity:1}}
+@keyframes fadeOut{to{opacity:0}}
+#setup-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);display:flex;justify-content:center;align-items:center;z-index:100;padding:16px}
+#setup-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:28px;text-align:center;color:#fff;border:2px solid #ffd700;box-shadow:0 16px 48px rgba(255,215,0,0.2);max-width:720px;width:100%}
+#setup-box h1{font-size:36px;color:#ffd700;margin-bottom:6px;text-shadow:0 0 16px rgba(255,215,0,0.4)}
+#setup-box h3{color:#aaa;margin-bottom:16px;font-weight:normal;font-size:14px}
+#setup-box input{padding:8px 12px;border-radius:8px;border:1px solid #555;background:#222;color:#fff;font-size:14px;width:100%;box-sizing:border-box}
+#setup-box select{padding:8px 14px;border-radius:8px;border:1px solid #555;background:#222;color:#fff;font-size:15px;margin:8px}
+#player-inputs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin:12px 0}
+.player-setup-card{background:rgba(40,40,70,0.6);border-radius:10px;padding:10px;text-align:center;border:1px solid #444}
+.player-setup-card .setup-label{display:block;margin:0 0 4px;color:#aaa;font-size:11px;text-align:center}
+.player-setup-card input{width:100%;margin:0}
+.player-setup-card .color-pick{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin:6px 0 0}
+.btn-start{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e;font-size:20px;padding:12px 40px;margin-top:12px;border:none;border-radius:10px;cursor:pointer;font-weight:bold;transition:all 0.3s}
+.btn-start:hover{transform:scale(1.04);box-shadow:0 8px 24px rgba(255,215,0,0.4)}
+.setup-label{display:block;margin:8px 0 4px;color:#ccc;font-size:13px}
+.color-pick{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:6px 0}
+.color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all 0.2s}
+.color-dot.selected{border-color:#fff;transform:scale(1.15)}
+/* Auction */
+#auction-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.82);z-index:300;justify-content:center;align-items:center}
+#auction-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #ffd700;border-radius:16px;padding:24px;text-align:center;color:#fff;min-width:280px;max-width:90vw;box-shadow:0 16px 48px rgba(255,215,0,0.25)}
+#auction-box h2{color:#ffd700;margin-bottom:6px}
+#auction-box h3{color:#fff;margin-bottom:12px;font-size:16px}
+#auction-box .current-bid{font-size:24px;color:#4caf50;font-weight:bold;margin:8px 0}
+#auction-box .bidder-name{color:#ffd700;font-size:16px;margin:8px 0}
+#auction-box input{padding:8px 14px;border-radius:8px;border:1px solid #555;background:#222;color:#fff;font-size:16px;width:120px;text-align:center;margin:8px}
+.bid-btn{background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;padding:8px 24px;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin:4px}
+.pass-bid-btn{background:linear-gradient(135deg,#f44336,#c62828);color:#fff;padding:8px 24px;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin:4px}
+
+/* Card draw animation */
+#card-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:250;justify-content:center;align-items:center}
+#card-popup{position:fixed;width:260px;height:360px;perspective:600px;transition:all 0.5s cubic-bezier(0.34,1.56,0.64,1);z-index:251}
+#card-popup.fly-in{transition:all 0.6s cubic-bezier(0.22,0.61,0.36,1)}
+#card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d}
+#card-inner.flipped{transform:rotateY(180deg)}
+.card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.5)}
+.card-back{background:linear-gradient(135deg,#e91e63,#9c27b0);border:3px solid #ffd700}
+.card-back .card-pattern{font-size:60px}
+.card-back .card-type{color:#ffd700;font-size:14px;font-weight:bold;margin-top:8px}
+.card-front{background:#fffdf0;border:3px solid #8B4513;transform:rotateY(180deg);color:#1a1a2e}
+.card-front.chance{border-color:#e91e63}
+.card-front.community{border-color:#2196f3}
+.card-front .card-icon{font-size:40px;margin-bottom:8px}
+.card-front .card-text{font-size:16px;font-weight:bold;line-height:1.4}
+.card-front .card-tag{font-size:11px;color:#888;margin-top:12px}
+/* Winner overlay */
+#winner-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:400;justify-content:center;align-items:center}
+#winner-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border:3px solid #ffd700;border-radius:24px;padding:40px;text-align:center;color:#fff;box-shadow:0 20px 80px rgba(255,215,0,0.4);animation:popIn 0.5s ease-out}
+#winner-box h1{font-size:48px;color:#ffd700;margin-bottom:8px;text-shadow:0 0 20px rgba(255,215,0,0.5)}
+#winner-box .winner-name{font-size:32px;font-weight:bold;margin:16px 0 8px}
+#winner-box .winner-stats{color:#aaa;font-size:14px;margin-bottom:20px}
+#winner-box button{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e;font-size:18px;padding:12px 36px;border:none;border-radius:10px;cursor:pointer;font-weight:bold;transition:all 0.3s}
+#winner-box button:hover{transform:scale(1.05);box-shadow:0 8px 24px rgba(255,215,0,0.4)}
+@keyframes popIn{0%{transform:scale(0.5);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+/* Mobile */
+@media(max-width:900px) and (orientation:landscape){
+#app{flex-direction:row;padding:6px;gap:16px;height:100vh;align-items:center}
+#board-container{flex:0 0 auto}
+canvas{width:100vh!important;height:100vh!important;border-radius:8px;margin:0}
+#panel{flex:1;min-width:170px;max-width:240px;padding:10px;font-size:12px;overflow-y:auto;max-height:100vh}
+#panel h2{font-size:14px;margin-bottom:6px}
+.player-card{padding:6px;margin-bottom:4px}
+.player-name{font-size:11px}
+.player-money{font-size:13px}
+.player-prop{font-size:9px}
+.player-avatar{width:24px;height:24px}
+.btn{padding:8px;font-size:12px;margin:4px 0}
+.btn-roll{padding:10px;font-size:14px}
+.dice-face{width:36px;height:36px;font-size:20px}
+#dice-display{gap:8px}
 #game-log{max-height:60px;font-size:10px}
 #setup-box{max-width:95vw;padding:16px}
 #setup-box h1{font-size:26px}
@@ -124,931 +124,930 @@ canvas{width:90vw!important;height:90vw!important}
 #setup-box h1{font-size:26px}
 #player-inputs{grid-template-columns:1fr}
 }
-126|</style>
-127|</head>
-128|<body>
-129|
-130|<div id="setup-screen">
-131|<div id="setup-box">
-132|<h1>🎩 大富翁</h1>
-133|<h3>经典多人对战 · BigWin Monopoly</h3>
-134|<label class="setup-label">玩家人数</label>
-135|<select id="player-count">
-136|<option value="2">2 人</option><option value="3">3 人</option><option value="4" selected>4 人</option><option value="5">5 人</option><option value="6">6 人</option>
-137|</select>
-138|<div id="player-inputs"></div>
-139|<button class="btn-start" id="btn-start-game">🎲 开始游戏</button>
-140|</div>
-141|</div>
-142|
-143|<!-- Portrait blocker overlay -->
-144|<div id="portrait-block" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:500;justify-content:center;align-items:center;flex-direction:column">
-145|<div style="text-align:center;color:#ffd700;animation:pulse 1.5s ease-in-out infinite">
-146|<div style="font-size:64px;margin-bottom:16px">📱</div>
-147|<div style="font-size:22px;font-weight:bold;margin-bottom:8px">请旋转手机</div>
-148|<div style="font-size:14px;color:#aaa">横屏模式获得最佳体验</div>
-149|</div>
-150|</div>
-151|
-152|<div id="app" style="display:none">
-153|<div id="board-container"><canvas id="board"></canvas></div>
-154|<div id="panel">
-155|<h2>👥 玩家状态</h2>
-156|<div id="players"></div>
-157|<div id="dice-area">
-158|<div id="dice-display"><div class="dice-face" id="die1">?</div><div class="dice-face" id="die2">?</div></div>
-159|</div>
-160|<div id="action-hint"></div>
-161|<button class="btn btn-roll" id="btn-roll">🎲 掷骰子</button>
-162|<button class="btn btn-buy" id="btn-buy" style="display:none">🏠 购买地产</button>
-163|<button class="btn btn-pass" id="btn-pass" style="display:none">⏭ 跳过 (拍卖)</button>
-164|<button class="btn btn-build" id="btn-build" style="display:none">🏗 建造房屋</button>
-165|<button class="btn btn-continue" id="btn-continue" style="display:none">▶ 继续</button>
-166|<div id="game-log"><div>欢迎来到大富翁！</div></div>
-167|</div>
-168|</div>
-169|
-170|<div id="auction-overlay">
-171|<div id="auction-box">
-172|<h2>🔨 拍卖</h2>
-173|<h3 id="auction-property-name"></h3>
-174|<div class="current-bid">当前出价: $<span id="auction-bid">0</span></div>
-175|<div class="bidder-name" id="auction-bidder"></div>
-176|<div id="auction-input-area">
-177|<input type="number" id="auction-amount" min="1" value="1">
-178|<button class="bid-btn" id="btn-place-bid">出价</button>
-179|<button class="pass-bid-btn" id="btn-pass-bid">放弃</button>
-180|</div>
-181|<div id="auction-result" style="display:none">
-182|<h3 id="auction-winner-text"></h3>
-183|<button class="bid-btn" id="btn-end-auction" style="margin-top:8px">确定</button>
-184|</div>
-185|</div>
-186|</div>
-187|
-188|<div id="card-overlay" style="display:none">
-189|<div id="card-popup" onclick="dismissCard()">
-190|<div id="card-inner">
-191|<div class="card-face card-back">
-192|<div class="card-pattern">🃏</div>
-193|<div class="card-type" id="card-type-label">机会</div>
-194|</div>
-195|<div class="card-face card-front" id="card-front">
-196|<div class="card-icon" id="card-icon">🎲</div>
-197|<div class="card-text" id="card-text"></div>
-198|<div class="card-tag">点击任意处继续</div>
-199|</div>
-200|</div>
-201|</div>
-202|</div>
-203|
-204|<div id="winner-overlay">
-205|<div id="winner-box">
-206|<h1>🏆</h1>
-207|<div class="winner-name" id="winner-name"></div>
-208|<div class="winner-stats" id="winner-stats"></div>
-209|<button id="btn-restart">🔄 再来一局</button>
-210|</div>
-211|</div>
-212|
-213|<script>
-214|const COLORS=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c'];
-215|
-216|const SPACES=[
-217|{name:'起点',type:'go'},
-218|{name:'地中海大道',type:'property',price:60,rent:[2,10,30,90,160,250],color:'#8B4513',houseCost:50},
-219|{name:'机会',type:'chance'},
-220|{name:'波罗的海大道',type:'property',price:60,rent:[4,20,60,180,320,450],color:'#8B4513',houseCost:50},
-221|{name:'所得税',type:'tax',amount:200},
-222|{name:'东方铁路',type:'railroad',price:200},
-223|{name:'东方大道',type:'property',price:100,rent:[6,30,90,270,400,550],color:'#87CEEB',houseCost:50},
-224|{name:'命运',type:'community'},
-225|{name:'佛蒙特大道',type:'property',price:100,rent:[6,30,90,270,400,550],color:'#87CEEB',houseCost:50},
-226|{name:'康涅狄格大道',type:'property',price:120,rent:[8,40,100,300,450,600],color:'#87CEEB',houseCost:50},
-227|{name:'监狱/探视',type:'jail'},
-228|{name:'圣查尔斯广场',type:'property',price:140,rent:[10,50,150,450,625,750],color:'#FF69B4',houseCost:100},
-229|{name:'电力公司',type:'utility',price:150},
-230|{name:'州立大道',type:'property',price:140,rent:[10,50,150,450,625,750],color:'#FF69B4',houseCost:100},
-231|{name:'弗吉尼亚大道',type:'property',price:160,rent:[12,60,180,500,700,900],color:'#FF69B4',houseCost:100},
-232|{name:'宾夕法尼亚铁路',type:'railroad',price:200},
-233|{name:'圣詹姆斯广场',type:'property',price:180,rent:[14,70,200,550,750,950],color:'#FF8C00',houseCost:100},
-234|{name:'机会',type:'chance'},
-235|{name:'田纳西大道',type:'property',price:180,rent:[14,70,200,550,750,950],color:'#FF8C00',houseCost:100},
-236|{name:'纽约大道',type:'property',price:200,rent:[16,80,220,600,800,1000],color:'#FF8C00',houseCost:100},
-237|{name:'免费停车',type:'free'},
-238|{name:'肯塔基大道',type:'property',price:220,rent:[18,90,250,700,875,1050],color:'#FF0000',houseCost:150},
-239|{name:'机会',type:'chance'},
-240|{name:'印第安纳大道',type:'property',price:220,rent:[18,90,250,700,875,1050],color:'#FF0000',houseCost:150},
-241|{name:'伊利诺伊大道',type:'property',price:240,rent:[20,100,300,750,925,1100],color:'#FF0000',houseCost:150},
-242|{name:'B&O铁路',type:'railroad',price:200},
-243|{name:'大西洋大道',type:'property',price:260,rent:[22,110,330,800,975,1150],color:'#FFFF00',houseCost:150},
-244|{name:'文特诺大道',type:'property',price:260,rent:[22,110,330,800,975,1150],color:'#FFFF00',houseCost:150},
-245|{name:'自来水厂',type:'utility',price:150},
-246|{name:'马文花园',type:'property',price:280,rent:[24,120,360,850,1025,1200],color:'#FFFF00',houseCost:150},
-247|{name:'进监狱',type:'gotojail'},
-248|{name:'太平洋大道',type:'property',price:300,rent:[26,130,390,900,1100,1275],color:'#008000',houseCost:200},
-249|{name:'北卡罗来纳大道',type:'property',price:300,rent:[26,130,390,900,1100,1275],color:'#008000',houseCost:200},
-250|{name:'机会',type:'chance'},
-251|{name:'宾夕法尼亚大道',type:'property',price:320,rent:[28,150,450,1000,1200,1400],color:'#008000',houseCost:200},
-252|{name:'短线铁路',type:'railroad',price:200},
-253|{name:'命运',type:'community'},
-254|{name:'公园广场',type:'property',price:350,rent:[35,175,500,1100,1300,1500],color:'#00008B',houseCost:200},
-255|{name:'奢侈税',type:'tax',amount:100},
-256|{name:'海滨大道',type:'property',price:400,rent:[50,200,600,1400,1700,2000],color:'#00008B',houseCost:200}
-257|];
-258|
-259|const CHANCE_CARDS=[
-260|{text:'银行发放红利 $150',act:p=>{p.money+=150;return'获得 $150'}},
-261|{text:'前进到起点',act:p=>{movePlayerTo(p,0);p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 前进到起点 +$200');return'前进到起点 +$200'}},
-262|{text:'后退 3 格',act:p=>{movePlayerBack(p,3);return'后退 3 格'}},
-263|{text:'缴纳税款 $75',act:p=>{p.money-=75;return'缴税 $75'}},
-264|{text:'前进到免费停车',act:p=>{movePlayerTo(p,20);return'前进到免费停车'}},
-265|{text:'银行利息 $50',act:p=>{p.money+=50;return'获得利息 $50'}},
-266|{text:'前进到伊利诺伊大道',act:p=>{movePlayerTo(p,24);return'前进到伊利诺伊大道'}},
-267|{text:'维修费用 $100',act:p=>{p.money-=100;return'维修 -$100'}},
-268|{text:'前进到圣查尔斯广场',act:p=>{movePlayerTo(p,11);return'前进到圣查尔斯广场'}},
-269|{text:'生日快乐！每人给你 $10',act:p=>{let t=0;players.forEach(o=>{if(o!==p&&!o.bankrupt){o.money-=10;t+=10}});p.money+=t;return'收到 $'+t}},
-270|{text:'获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
-271|{text:'进监狱！',act:p=>{sendToJail(p);return'进监狱！'}},
-272|{text:'获得 $200',act:p=>{p.money+=200;return'获得 $200'}},
-273|{text:'医疗费用 $50',act:p=>{p.money-=50;return'医疗 -$50'}},
-274|{text:'前进到海滨大道',act:p=>{movePlayerTo(p,39);return'前进到海滨大道'}},
-275|{text:'银行失误，获得 $200',act:p=>{p.money+=200;return'获得 $200'}}
-276|];
-277|const COMMUNITY_CARDS=[
-278|{text:'银行错误，获得 $200',act:p=>{p.money+=200;return'获得 $200'}},
-279|{text:'医生费用 $50',act:p=>{p.money-=50;return'医疗 -$50'}},
-280|{text:'出售股票获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
-281|{text:'人寿保险到期，获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
-282|{text:'医院费用 $100',act:p=>{p.money-=100;return'医疗 -$100'}},
-283|{text:'学校费用 $50',act:p=>{p.money-=50;return'学费 -$50'}},
-284|{text:'咨询服务费 $25',act:p=>{p.money+=25;return'获得 $25'}},
-285|{text:'维修评估，每栋$40/酒店$115',act:p=>{let c=0;SPACES.forEach(s=>{if(s.owner===p.id)c+=s.houses*(s.houses===5?115:40)});p.money-=c;return'维修 -$'+c}},
-286|{text:'选美比赛获奖 $10',act:p=>{p.money+=10;return'获得 $10'}},
-287|{text:'继承遗产 $100',act:p=>{p.money+=100;return'获得 $100'}},
-288|{text:'出售旧货 $50',act:p=>{p.money+=50;return'获得 $50'}},
-289|{text:'获得 $25',act:p=>{p.money+=25;return'获得 $25'}},
-290|{text:'进监狱！',act:p=>{sendToJail(p);return'进监狱！'}},
-291|{text:'前进到起点',act:p=>{movePlayerTo(p,0);p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 前进到起点 +$200');return'前进到起点 +$200'}},
-292|{text:'获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
-293|{text:'生日礼物 $10',act:p=>{p.money+=10;return'获得 $10'}}
-294|];
-295|
-296|// State
-297|let players=[],currentPlayer=0,gamePhase='roll',diceValues=[0,0],doublesCount=0;
-298|let canvas,ctx,BOARD_SIZE=700,CELL_SIZE,chanceDeck,communityDeck,chanceIdx=0,communityIdx=0;
-299|let animFrame=null,auctionState=null;
-300|let floatingTexts=[];
-301|let jailAnim=null; // {player, startTime}
-302|let tokenAnims={}; // per-player animation state: {fromX,fromY,toX,toY,progress}
-303|
-304|function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-305|
-306|function initGame(numPlayers,names,colors){
-307|players=[];currentPlayer=0;gamePhase='roll';doublesCount=0;auctionState=null;tokenAnims={};
-308|for(let i=0;i<numPlayers;i++){
-309|players.push({id:i,name:names[i]||'玩家'+(i+1),color:colors[i],money:1500,position:0,properties:[],inJail:false,jailTurns:0,bankrupt:false,animPos:0});
-310|}
-311|SPACES.forEach(s=>{s.owner=null;s.houses=0});
-312|chanceDeck=shuffle([...CHANCE_CARDS]);communityDeck=shuffle([...COMMUNITY_CARDS]);
-313|chanceIdx=0;communityIdx=0;
-314|}
-315|
-316|// Card-triggered walking animation (no GO salary, no jail/doubles logic)
-317|let cardWalking=false;
-318|function cardWalkAnimate(p,targetPos,onDone){
-319|if(animFrame)cancelAnimationFrame(animFrame);
-320|const startPos=p.position;
-321|const steps=targetPos>=startPos?targetPos-startPos:targetPos+40-startPos;
-322|if(steps===0){onDone();return;}
-323|cardWalking=true;
-324|let step=0;
-325|const stepTime=steps>20?Math.max(40,2000/steps):150,startTime=performance.now();
-326|function frame(ts){
-327|const newStep=Math.min(Math.floor((ts-startTime)/stepTime),steps);
-328|if(newStep>step){
-329|step=newStep;p.position=(startPos+step)%40;
-330|}
-331|p.animPos=startPos+((ts-startTime)/(steps*stepTime))*steps;
-332|drawBoard();
-333|if(step<steps){animFrame=requestAnimationFrame(frame);}
-334|else{
-335|p.position=targetPos;p.animPos=targetPos;
-336|animFrame=null;cardWalking=false;
-337|drawBoard();
-338|onDone();
-339|}
-340|}
-341|animFrame=requestAnimationFrame(frame);
-342|}
-343|
-344|// Movement (used by card effects)
-345|function movePlayerTo(p,pos){
-346|cardWalkAnimate(p,pos,()=>{
-347|landOnSpace(p);
-348|updateUI();
-349|});
-350|}
-351|function movePlayerBack(p,steps){
-352|cardWalkBack(p,steps,()=>{
-353|landOnSpace(p);
-354|updateUI();
-355|});
-356|}
-357|
-358|// Backwards walking animation for "后退" cards
-359|function cardWalkBack(p,steps,onDone){
-360|if(animFrame)cancelAnimationFrame(animFrame);
-361|cardWalking=true;
-362|const startPos=p.position;
-363|const targetPos=(startPos-steps+40)%40;
-364|let step=0;
-365|const stepTime=150,startTime=performance.now();
-366|function frame(ts){
-367|const newStep=Math.min(Math.floor((ts-startTime)/stepTime),steps);
-368|if(newStep>step){
-369|step=newStep;p.position=(startPos-step+40)%40;
-370|}
-371|// Smooth interpolation going backwards
-372|let raw=startPos-((ts-startTime)/(steps*stepTime))*steps;
-373|p.animPos=((raw%40)+40)%40;
-374|drawBoard();
-375|if(step<steps){animFrame=requestAnimationFrame(frame);}
-376|else{
-377|p.position=targetPos;p.animPos=targetPos;
-378|animFrame=null;cardWalking=false;
-379|drawBoard();
-380|onDone();
-381|}
-382|}
-383|animFrame=requestAnimationFrame(frame);
-384|}
-385|
-386|// Landing
-387|function landOnSpace(p){
-388|const s=SPACES[p.position];
-389|switch(s.type){
-390|case'property':case'railroad':case'utility':
-391|if(s.owner===null){gamePhase='buy';hint('购买 '+s.name+' ($'+s.price+')？');}
-392|else if(s.owner!==p.id){payRent(p,s);checkBankrupt(p);gamePhase='result';}
-393|else if(s.type==='property'){
-394|const cg=SPACES.filter(sp=>sp.color===s.color&&sp.type==='property');
-395|const ownsAll=cg.every(sp=>sp.owner===p.id);
-396|const canBuild=ownsAll&&(s.houses||0)<5&&p.money>=(s.houseCost||50)&&(s.houses||0)<=Math.min(...cg.map(sp=>sp.houses||0));
-397|if(canBuild){gamePhase='build';hint('你拥有 '+s.name+'，可以建房');}
-398|else{
-399|let why='你拥有 '+s.name;
-400|if(!ownsAll)why+='（需拥有全部'+cg.length+'处该色地产）';
-401|else if((s.houses||0)>=5)why+='（已是酒店）';
-402|else if(p.money<(s.houseCost||50))why+='（资金不足）';
-403|else why+='（需均匀建房）';
-404|gamePhase='result';hint(why);
-405|}
-406|}
-407|else{gamePhase='result';hint('你拥有 '+s.name);}
-408|break;
-409|case'tax':p.money-=s.amount;moneyAnim('-$'+s.amount,'#f44336');log(p.name+' 缴税 $'+s.amount);checkBankrupt(p);gamePhase='result';hint(p.name+' 缴税 $'+s.amount);break;
-410|case'chance':drawCard(p,'chance');break;
-411|case'community':drawCard(p,'community');break;
-412|case'gotojail':sendToJail(p);log(p.name+' 被送进监狱！');gamePhase='result';hint(p.name+' 进监狱了！');break;
-413|case'go':gamePhase='result';hint('经过起点');break;
-414|case'free':gamePhase='result';hint('免费停车，休息一下');break;
-415|case'jail':gamePhase='result';hint('探视监狱');break;
-416|}
-417|updateUI();
-418|}
-419|
-420|function payRent(p,s){
-421|let rent=0;
-422|if(s.type==='railroad'){const n=SPACES.filter(sp=>sp.type==='railroad'&&sp.owner===s.owner).length;rent=[25,50,100,200][n-1];}
-423|else if(s.type==='utility'){const n=SPACES.filter(sp=>sp.type==='utility'&&sp.owner===s.owner).length;rent=n===2?diceValues[0]*10+10:diceValues[0]*4;}
-424|else{rent=s.rent[Math.min(s.houses||0,5)];}
-425|p.money-=rent;players[s.owner].money+=rent;
-426|moneyAnim('-$'+rent,'#f44336');
-427|log(p.name+' 支付 $'+rent+' 租金给 '+players[s.owner].name);
-428|hint(p.name+' 支付 $'+rent+' 租金');
-429|}
-430|
-431|function drawCard(p,type){
-432|const deck=type==='chance'?chanceDeck:communityDeck;
-433|const idx=type==='chance'?chanceIdx:communityIdx;
-434|const card=deck[idx%deck.length];
-435|if(type==='chance')chanceIdx++;else communityIdx++;
-436|
-437|// Pre-set card content
-438|document.getElementById('card-type-label').textContent=type==='chance'?'机会':'命运';
-439|document.getElementById('card-front').className='card-face card-front '+(type==='chance'?'chance':'community');
-440|document.getElementById('card-icon').textContent=type==='chance'?'❓':'📬';
-441|document.getElementById('card-text').textContent=card.text;
-442|window._pendingCard={p,card,type};
-443|
-444|// Calculate player's screen position from canvas
-445|const popup=document.getElementById('card-popup');
-446|const canvas=document.getElementById('board');
-447|const rect=canvas.getBoundingClientRect();
-448|const{row,col}=getSpacePos(p.position);
-449|const CELL=rect.width/11;
-450|const pad=CELL*1.1;
-451|let cx=rect.left+col*CELL+CELL/2,cy=rect.top+row*CELL+CELL/2;
-452|if(row===0)cy=rect.top+pad/2;if(row===10)cy=rect.top+rect.height-pad/2;
-453|if(col===0)cx=rect.left+pad/2;if(col===10)cx=rect.left+rect.width-pad/2;
-454|
-455|// Start card at player position, fly to center
-456|popup.style.transition='none';
-457|popup.style.left=cx-130+'px';popup.style.top=cy-180+'px';
-458|popup.style.transform='scale(0.3) rotate(-15deg)';
-459|popup.style.opacity='0.8';
-460|
-461|// Show overlay (dark bg only)
-462|document.getElementById('card-overlay').style.display='flex';
-463|
-464|// Force reflow then animate to center
-465|popup.offsetHeight;
-466|popup.classList.add('fly-in');
-467|popup.style.transition='all 0.6s cubic-bezier(0.22,0.61,0.36,1)';
-468|popup.style.left='50%';popup.style.top='50%';
-469|popup.style.transform='translate(-50%,-50%) scale(1) rotate(0deg)';
-470|popup.style.opacity='1';
-471|
-472|// Flip after fly-in completes
-473|setTimeout(()=>{
-474|popup.classList.remove('fly-in');
-475|document.getElementById('card-inner').classList.add('flipped');
-476|},650);
-477|}
-478|
-479|function dismissCard(){
-480|if(!window._pendingCard)return;
-481|const{p,card,type}=window._pendingCard;
-482|window._pendingCard=null;
-483|document.getElementById('card-overlay').style.display='none';
-484|document.getElementById('card-inner').classList.remove('flipped');
-485|// Reset card position for next draw
-486|const popup=document.getElementById('card-popup');
-487|popup.classList.remove('fly-in');
-488|popup.style.transition='none';
-489|popup.style.left='';popup.style.top='';popup.style.transform='';popup.style.opacity='';
-490|const prevPhase=gamePhase;
-491|const msg=card.act(p);
-492|log(p.name+' ['+(type==='chance'?'机会':'命运')+'] '+card.text+' → '+msg);
-493|checkBankrupt(p);
-494|// If card triggered a walk animation, let the callback handle landOnSpace + updateUI
-495|if(cardWalking){
-496|// Animation callback will call landOnSpace → sets gamePhase → updateUI
-497|return;
-498|}
-499|// Card was a simple money transaction — set to result
-500|if(gamePhase===prevPhase||gamePhase==='roll')gamePhase='result';
-501|if(gamePhase!=='gameover')updateUI();
-502|}
-503|
-504|function buildHouse(){
-505|const p=players[currentPlayer],s=SPACES[p.position];
-506|if(s.type!=='property'||s.owner!==p.id)return;
-507|const cg=SPACES.filter(sp=>sp.color===s.color&&sp.type==='property');
-508|if(!cg.every(sp=>sp.owner===p.id)){toast('需要拥有该颜色组全部地产！');return;}
-509|if((s.houses||0)>=5){toast('已是酒店！');return;}
-510|const cost=s.houseCost||50;if(p.money<cost){toast('资金不足！');return;}
-511|const mh=Math.min(...cg.map(sp=>sp.houses||0));
-512|if((s.houses||0)>mh){toast('请先在其他同色地产上建房！');return;}
-513|p.money-=cost;s.houses=(s.houses||0)+1;
-514|log(p.name+' 建造'+(s.houses===5?'酒店':'房屋')+' ($'+cost+')');
-515|gamePhase='result';updateUI();
-516|}
-517|
-518|function checkBankrupt(p){
-519|if(p.money<0&&!p.bankrupt){
-520|p.bankrupt=true;log(p.name+' 破产！💸');
-521|SPACES.forEach(s=>{if(s.owner===p.id){s.owner=null;s.houses=0}});p.properties=[];
-522|const alive=players.filter(pl=>!pl.bankrupt);
-523|if(alive.length===1){
-524|gamePhase='gameover';
-525|const w=alive[0];
-526|document.getElementById('winner-name').textContent=w.name+' 获胜！';
-527|document.getElementById('winner-stats').textContent='💰 资产 $'+w.money.toLocaleString()+' | 🏠 '+w.properties.length+' 处地产';
-528|document.getElementById('winner-overlay').style.display='flex';
-529|}
-530|}
-531|}
-532|
-533|function continueTurn(){
-534|if(gamePhase==='gameover')return;
-535|if(diceValues[0]===diceValues[1]&&!players[currentPlayer].inJail){
-536|log(players[currentPlayer].name+' 掷出对子，再掷一次！');
-537|gamePhase='roll';hint('对子！'+players[currentPlayer].name+' 再掷一次');
-538|}else{
-539|advancePlayer();
-540|}
-541|updateUI();
-542|}
-543|
-544|// Dice & Walking Animation
-545|function rollDice(){
-546|if(gamePhase==='gameover')return;
-547|const p=players[currentPlayer];
-548|if(p.bankrupt){advancePlayer();return;}
-549|diceValues=[Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1];
-550|const total=diceValues[0]+diceValues[1];
-551|
-552|// Animate dice
-553|document.getElementById('die1').textContent=diceValues[0];
-554|document.getElementById('die2').textContent=diceValues[1];
-555|document.getElementById('die1').classList.add('rolling');
-556|document.getElementById('die2').classList.add('rolling');
-557|setTimeout(()=>{document.getElementById('die1').classList.remove('rolling');document.getElementById('die2').classList.remove('rolling');},400);
-558|
-559|log(p.name+' 掷出 '+diceValues[0]+'+'+diceValues[1]+'='+total);
-560|
-561|if(p.inJail){
-562|if(diceValues[0]===diceValues[1]){p.inJail=false;p.jailTurns=0;log(p.name+' 掷出对子，出狱！');}
-563|else{p.jailTurns++;if(p.jailTurns>=3){p.money-=50;p.inJail=false;p.jailTurns=0;log(p.name+' 缴纳 $50 保释金');}
-564|else{log(p.name+' 仍在狱中');gamePhase='result';hint(p.name+' 仍在狱中');updateUI();return;}}
-565|}
-566|
-567|if(diceValues[0]===diceValues[1]){doublesCount++;if(doublesCount>=3){sendToJail(p);log(p.name+' 连续三对，进监狱！');gamePhase='result';updateUI();return;}}
-568|else{doublesCount=0;}
-569|
-570|walkAnimate(p,total);
-571|}
-572|
-573|function walkAnimate(p,steps){
-574|if(animFrame)cancelAnimationFrame(animFrame);
-575|const startPos=p.position,endPos=(startPos+steps)%40;
-576|let step=0,passedGo=false;
-577|const stepTime=150,totalTime=steps*stepTime,startTime=performance.now();
-578|
-579|function frame(ts){
-580|const elapsed=ts-startTime;
-581|const newStep=Math.min(Math.floor(elapsed/stepTime),steps);
-582|if(newStep>step){
-583|step=newStep;p.position=(startPos+step)%40;
-584|if(startPos+step>=40&&!passedGo){passedGo=true;p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 经过起点 +$200');}
-585|}
-586|p.animPos=startPos+(elapsed/totalTime)*steps;
-587|drawBoard();
-588|if(step<steps){animFrame=requestAnimationFrame(frame);}
-589|else{
-590|p.position=endPos;p.animPos=endPos;
-591|if(!passedGo&&startPos+steps>=40){p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 经过起点 +$200');}
-592|animFrame=null;
-593|drawBoard();
-594|landOnSpace(p);
-595|}
-596|}
-597|animFrame=requestAnimationFrame(frame);
-598|}
-599|
-600|function buyProperty(){
-601|const p=players[currentPlayer],s=SPACES[p.position];
-602|if(s.owner!==null||p.money<s.price)return;
-603|p.money-=s.price;s.owner=p.id;p.properties.push(p.position);
-604|moneyAnim('-$'+s.price,'#f44336');
-605|log(p.name+' 购买了 '+s.name+' ($'+s.price+')');
-606|gamePhase='result';updateUI();
-607|}
-608|
-609|function passTurn(){
-610|const s=SPACES[players[currentPlayer].position];
-611|if((s.type==='property'||s.type==='railroad'||s.type==='utility')&&s.owner===null){
-612|startAuction(s);return;
-613|}
-614|gamePhase='result';updateUI();
-615|}
-616|
-617|// Auction
-618|function startAuction(space){
-619|const alive=players.filter(p=>!p.bankrupt);
-620|if(alive.length<=1){gamePhase='result';updateUI();return;}
-621|// Order: start from current player, go clockwise
-622|const order=[];
-623|let idx=currentPlayer;
-624|for(let i=0;i<alive.length;i++){
-625|while(players[idx].bankrupt)idx=(idx+1)%players.length;
-626|if(!order.includes(idx))order.push(idx);
-627|idx=(idx+1)%players.length;
-628|}
-629|auctionState={space,currentBid:0,highestBidder:null,bidderOrder:order,currentBidderIdx:0,passed:new Set(),totalBidders:order.length};
-630|showAuctionUI();
-631|}
-632|function showAuctionUI(){
-633|const s=auctionState.space;
-634|document.getElementById('auction-property-name').textContent=s.name+' ($'+s.price+')';
-635|updateAuctionDisplay();
-636|document.getElementById('auction-overlay').style.display='flex';
-637|document.getElementById('auction-input-area').style.display='block';
-638|document.getElementById('auction-result').style.display='none';
-639|}
-640|function updateAuctionDisplay(){
-641|document.getElementById('auction-bid').textContent=auctionState.currentBid;
-642|const bid=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
-643|document.getElementById('auction-bidder').textContent=bid.name+' 请出价（高于 $'+(auctionState.currentBid||0)+'）';
-644|document.getElementById('auction-amount').min=auctionState.currentBid+1;
-645|// Smart default: if we have more cash than highest bidder, default to their total+1 to knock them out
-646|let defaultBid=auctionState.currentBid+1;
-647|if(auctionState.highestBidder!==null){
-648|const highest=players[auctionState.highestBidder];
-649|if(bid.money>highest.money){
-650|defaultBid=Math.max(defaultBid,Math.min(bid.money,highest.money+1));
-651|}
-652|}
-653|document.getElementById('auction-amount').value=Math.min(bid.money,Math.max(defaultBid,auctionState.currentBid+1));
-654|document.getElementById('auction-amount').placeholder='出价金额';
-655|}
-656|function placeBid(){
-657|const amount=parseInt(document.getElementById('auction-amount').value);
-658|const bidder=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
-659|if(isNaN(amount)||amount<=auctionState.currentBid){toast('出价必须高于当前出价！');return;}
-660|if(amount>bidder.money){
-661|// Can't afford — auto pass
-662|toast(bidder.name+' 资金不足，自动放弃');
-663|passBid();
-664|return;
-665|}
-666|auctionState.currentBid=amount;auctionState.highestBidder=bidder.id;
-667|log(bidder.name+' 出价 $'+amount);nextBidder();
-668|}
-669|function passBid(){
-670|const bid=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
-671|auctionState.passed.add(bid.id);log(bid.name+' 放弃竞拍');nextBidder();
-672|}
-673|function nextBidder(){
-674|do{auctionState.currentBidderIdx=(auctionState.currentBidderIdx+1)%auctionState.totalBidders;}
-675|while(auctionState.passed.has(auctionState.bidderOrder[auctionState.currentBidderIdx])&&auctionState.passed.size<auctionState.totalBidders);
-676|// Auto-skip if current bidder can't afford to bid higher
-677|const next=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
-678|if(next&&next.money<=auctionState.currentBid&&!auctionState.passed.has(next.id)){
-679|log(next.name+' 资金不足 ($'+next.money+')，自动放弃');
-680|auctionState.passed.add(next.id);
-681|setTimeout(()=>nextBidder(),300);
-682|return;
-683|}
-684|if(auctionState.totalBidders-auctionState.passed.size<=1||auctionState.passed.size>=auctionState.totalBidders-1)finishAuction();
-685|else updateAuctionDisplay();
-686|}
-687|function finishAuction(){
-688|const s=auctionState.space;
-689|document.getElementById('auction-input-area').style.display='none';
-690|document.getElementById('auction-result').style.display='block';
-691|if(auctionState.highestBidder===null){document.getElementById('auction-winner-text').textContent=s.name+' 流拍';}
-692|else{
-693|const w=players[auctionState.highestBidder],b=auctionState.currentBid,si=SPACES.indexOf(s);
-694|w.money-=b;s.owner=w.id;if(!w.properties.includes(si))w.properties.push(si);
-695|document.getElementById('auction-winner-text').textContent='🏆 '+w.name+' $'+b+' 赢得 '+s.name;
-696|log('🔨 拍卖: '+w.name+' $'+b+' → '+s.name);
-697|}
-698|}
-699|function endAuction(){document.getElementById('auction-overlay').style.display='none';auctionState=null;gamePhase='result';updateUI();}
-700|
-701|function advancePlayer(){
-702|if(gamePhase==='gameover')return;
-703|doublesCount=0;
-704|do{currentPlayer=(currentPlayer+1)%players.length;}while(players[currentPlayer].bankrupt&&players.filter(p=>!p.bankrupt).length>1);
-705|if(players[currentPlayer].bankrupt)return;
-706|gamePhase='roll';hint('轮到 '+players[currentPlayer].name);
-707|updateUI();
-708|}
-709|
-710|// Drawing
-711|function getSpacePos(i){
-712|if(i<=10)return{row:10,col:10-i,rot:0};
-713|if(i<=20)return{row:10-(i-10),col:0,rot:90};
-714|if(i<=30)return{row:0,col:i-20,rot:180};
-715|return{row:i-30,col:10,rot:270};
-716|}
-717|
-718|function getTokenCenter(pos){
-719|const{row,col}=getSpacePos(pos);
-720|const pad=CELL_SIZE*1.1;
-721|let cx=col*CELL_SIZE+CELL_SIZE/2,cy=row*CELL_SIZE+CELL_SIZE/2;
-722|if(row===0)cy=pad/2;if(row===10)cy=BOARD_SIZE-pad/2;
-723|if(col===0)cx=pad/2;if(col===10)cx=BOARD_SIZE-pad/2;
-724|return{cx,cy};
-725|}
-726|
-727|function drawBoard(){
-728|ctx.clearRect(0,0,BOARD_SIZE,BOARD_SIZE);
-729|ctx.fillStyle='#c8e6c9';ctx.fillRect(0,0,BOARD_SIZE,BOARD_SIZE);
-730|CELL_SIZE=BOARD_SIZE/11;
-731|const pad=CELL_SIZE*1.1,inner=BOARD_SIZE-pad*2;
-732|
-733|// Center
-734|ctx.fillStyle='#dcedc8';ctx.fillRect(pad,pad,inner,inner);
-735|ctx.fillStyle='#1a1a2e';ctx.font='bold 22px "Segoe UI",system-ui';
-736|ctx.fillText('🎩 大富翁',BOARD_SIZE/2-58,BOARD_SIZE/2-8);
-737|ctx.font='12px "Segoe UI",system-ui';ctx.fillText('BIGWIN MONOPOLY',BOARD_SIZE/2-56,BOARD_SIZE/2+16);
-738|
-739|// Spaces
-740|for(let i=0;i<40;i++){
-741|const{row,col,rot}=getSpacePos(i);
-742|const x=col*CELL_SIZE,y=row*CELL_SIZE;
-743|let w=CELL_SIZE,h=CELL_SIZE;
-744|if(row===0||row===10)h=pad;if(col===0||col===10)w=pad;
-745|const s=SPACES[i];
-746|
-747|if(s.color&&s.type==='property'){ctx.fillStyle=s.color+'44';ctx.fillRect(x,y,w,h);ctx.fillStyle=s.color;ctx.fillRect(x,y,w,5);}
-748|ctx.strokeStyle='#333';ctx.lineWidth=0.8;ctx.strokeRect(x,y,w,h);
-749|
-750|ctx.save();
-751|if(rot===0)ctx.translate(x,y);
-752|else if(rot===90){ctx.translate(x+w,y);ctx.rotate(Math.PI/2);}
-753|else if(rot===180){ctx.translate(x+w,y+h);ctx.rotate(Math.PI);}
-754|else{ctx.translate(x,y+h);ctx.rotate(-Math.PI/2);}
-755|ctx.fillStyle='#111';ctx.font='bold 9px "Segoe UI",system-ui';
-756|const nm=s.name;
-757|if(nm.length>5){ctx.fillText(nm.slice(0,5),3,12);ctx.fillText(nm.slice(5),3,23);}
-758|else ctx.fillText(nm,3,12);
-759|ctx.restore();
-760|
-761|// Owner highlight — full cell tint + thick border + badge
-762|if(s.owner!==null){
-763|const oc=players[s.owner].color;
-764|// Tint the whole cell
-765|ctx.fillStyle=oc+'66';
-766|if(row===0||row===10)ctx.fillRect(x+2,y+2,w-4,h-4);
-767|else ctx.fillRect(x+2,y+2,w-4,h-4);
-768|// Thick top/bottom color bar
-769|ctx.fillStyle=oc;
-770|if(row===0||row===10){ctx.fillRect(x+3,y+3,w-6,6);ctx.fillRect(x+3,y+h-9,w-6,6);}
-771|else{ctx.fillRect(x+3,y+3,6,h-6);ctx.fillRect(x+w-9,y+3,6,h-6);}
-772|// Owner number badge
-773|ctx.fillStyle='#fff';ctx.beginPath();
-774|const bx=row===0||row===10?x+w/2:col===0?x+10:x+w-10;
-775|const by=row===0||row===10?col===0?y+10:y+h-10:y+h/2;
-776|ctx.arc(bx,by,8,0,Math.PI*2);ctx.fill();
-777|ctx.fillStyle='#111';ctx.font='bold 8px "Segoe UI",system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
-778|ctx.fillText(s.owner+1,bx,by);ctx.textAlign='start';ctx.textBaseline='alphabetic';
-779|}
-780|// Houses
-781|if(s.houses>0){
-782|for(let h=0;h<Math.min(s.houses,4);h++){
-783|ctx.fillStyle=h===3&&s.houses===5?'#d32f2f':'#2e7d32';
-784|ctx.fillRect(x+3+h*12,(row===0||row===10)?y+h-18:y+5,9,9);
-785|}
-786|}
-787|// Icons
-788|if(s.type==='chance'){ctx.fillStyle='#e91e63';ctx.font='16px serif';ctx.fillText('?',x+w/2-5,y+h/2+6)}
-789|if(s.type==='community'){ctx.fillStyle='#2196f3';ctx.font='14px serif';ctx.fillText('📫',x+w/2-8,y+h/2+5)}
-790|if(s.type==='go'){ctx.fillStyle='#4caf50';ctx.font='bold 12px "Segoe UI",system-ui';ctx.fillText('GO→',x+6,y+14)}
-791|if(s.type==='jail'){ctx.fillStyle='#ff9800';ctx.font='14px serif';ctx.fillText('🔒',x+w/2-9,y+16)}
-792|if(s.type==='gotojail'){ctx.fillStyle='#f44336';ctx.font='11px "Segoe UI",system-ui';ctx.fillText('→监狱',x+4,y+14)}
-793|if(s.price&&!s.owner){ctx.fillStyle='#333';ctx.font='8px "Segoe UI",system-ui';ctx.fillText('$'+s.price,(row===0||row===10)?x+4:x+w-24,(row===0||row===10)?y+h-3:y+12)}
-794|}
-795|
-796|// Draw tokens with cartoon characters
-797|const posCount={};
-798|players.forEach(p=>{
-799|if(p.bankrupt)return;
-800|const key=p.position;
-801|posCount[key]=(posCount[key]||0)+1;
-802|const idx=posCount[key]-1;
-803|const{row,col}=getSpacePos(p.position);
-804|
-805|// Calculate exact position for animating tokens
-806|let animPos=p.position;
-807|if(p.animPos!==undefined&&p.animPos!==p.position){
-808|animPos=p.animPos;
-809|}
-810|const{row:ar,col:ac}=getSpacePos(Math.floor(animPos)%40);
-811|const{cx,cy}=getTokenCenter(Math.floor(animPos)%40);
-812|
-813|const ox=(idx%2)*20-10,oy=Math.floor(idx/2)*20-10;
-814|drawCharacter(cx+ox,cy+oy,18,p);
-815|});
-816|// Draw animations on top
-817|drawFloatingTexts();
-818|drawJailAnim();
-819|}
-820|
-821|function drawCharacter(x,y,r,p){
-822|const col=p.color;
-823|// Body shadow
-824|ctx.fillStyle='rgba(0,0,0,0.3)';ctx.beginPath();ctx.ellipse(x,y+r*0.7,r*0.8,r*0.25,0,0,Math.PI*2);ctx.fill();
-825|// Body
-826|ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-r*0.05,r*0.6,0,Math.PI*2);ctx.fill();
-827|// Head
-828|ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-r*0.65,r*0.55,0,Math.PI*2);ctx.fill();
-829|// Eyes
-830|ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-r*0.18,y-r*0.72,r*0.16,0,Math.PI*2);ctx.fill();
-831|ctx.beginPath();ctx.arc(x+r*0.18,y-r*0.72,r*0.16,0,Math.PI*2);ctx.fill();
-832|ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x-r*0.18,y-r*0.72,r*0.07,0,Math.PI*2);ctx.fill();
-833|ctx.beginPath();ctx.arc(x+r*0.18,y-r*0.72,r*0.07,0,Math.PI*2);ctx.fill();
-834|// Smile
-835|ctx.strokeStyle='#111';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y-r*0.62,r*0.15,0.1,Math.PI-0.1);ctx.stroke();
-836|// Hair/hat
-837|ctx.fillStyle=darken(col,30);ctx.beginPath();ctx.arc(x,y-r*0.92,r*0.3,Math.PI,2*Math.PI);ctx.fill();
-838|// Player number badge
-839|ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x+r*0.45,y-r*0.85,r*0.18,0,Math.PI*2);ctx.fill();
-840|ctx.fillStyle='#111';ctx.font='bold 8px "Segoe UI",system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
-841|ctx.fillText(p.id+1,x+r*0.45,y-r*0.85);ctx.textAlign='start';ctx.textBaseline='alphabetic';
-842|// Active glow
-843|if(p.id===currentPlayer&&!p.bankrupt){
-844|ctx.strokeStyle='#ffd700';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y-r*0.3,r*0.75,0,Math.PI*2);ctx.stroke();
-845|}
-846|}
-847|
-848|function darken(hex,amt){
-849|let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
-850|r=Math.max(0,r-amt);g=Math.max(0,g-amt);b=Math.max(0,b-amt);
-851|return'#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
-852|}
-853|
-854|function moneyAnim(text,color){
-855|const p=players[currentPlayer];
-856|const{row,col}=getSpacePos(p.position);
-857|const{cx,cy}=getTokenCenter(p.position);
-858|floatingTexts.push({x:cx,y:cy,text,color,alpha:1,vy:-1.5,life:60});
-859|}
-860|function drawFloatingTexts(){
-861|for(let i=floatingTexts.length-1;i>=0;i--){
-862|const f=floatingTexts[i];
-863|f.y+=f.vy;f.life--;
-864|if(f.life<=20)f.alpha=f.life/20;
-865|ctx.save();ctx.globalAlpha=f.alpha;
-866|ctx.font='bold 16px "Segoe UI",system-ui';ctx.textAlign='center';
-867|ctx.fillStyle=f.color;ctx.fillText(f.text,f.x,f.y);
-868|ctx.restore();
-869|if(f.life<=0)floatingTexts.splice(i,1);
-870|}
-871|}
-872|function sendToJail(p){
-873|const oldPos=p.position;
-874|p.inJail=true;p.jailTurns=0;p.position=10;
-875|startJailAnim(p,oldPos);
-876|}
-877|function startJailAnim(p,fromPos){
-878|jailAnim={player:p.id,fromPos:fromPos,startTime:performance.now()};
-879|// Keep redrawing until jail animation finishes
-880|function jailFrame(){
-881|drawBoard();
-882|if(jailAnim)requestAnimationFrame(jailFrame);
-883|}
-884|requestAnimationFrame(jailFrame);
-885|}
-886|function drawJailAnim(){
-887|if(!jailAnim)return;
-888|const elapsed=performance.now()-jailAnim.startTime;
-889|const duration=1500;
-890|if(elapsed>duration){jailAnim=null;return;}
-891|const p=players[jailAnim.player];
-892|const{row,col}=getSpacePos(10); // jail position
-893|const cx=col*CELL_SIZE+CELL_SIZE/2,cy=row*CELL_SIZE+CELL_SIZE/2;
-894|const progress=Math.min(elapsed/duration,1);
-895|const ease=1-Math.pow(1-progress,2);
-896|// Police car drives from original position to jail
-897|const from=jailAnim.fromPos||0;
-898|const{row:sr,col:sc}=getSpacePos(from);
-899|const scx=sc*CELL_SIZE+CELL_SIZE/2,scy=sr*CELL_SIZE+CELL_SIZE/2;
-900|const x=scx+(cx-scx)*ease,y=scy+(cy-scy)*ease;
-901|ctx.save();ctx.font='28px serif';ctx.textAlign='center';
-902|ctx.fillText('🚔',x,y-10);
-903|ctx.restore();
-904|}
-905|
-906|function updateUI(){
-907|drawBoard();
-908|const panel=document.getElementById('players');
-909|panel.innerHTML=players.map(p=>{
-910|const active=p.id===currentPlayer&&!p.bankrupt?'active':'',bkr=p.bankrupt?'bankrupt':'';
-911|return`<div class="player-card ${active} ${bkr}">
-912|<div class="flex-row">
-913|<div class="player-avatar" style="background:${p.color}"></div>
-914|<div class="player-info">
-915|<div class="player-name">${p.name}</div>
-916|<div class="player-money">💰 $${(p.money||0).toLocaleString()}</div>
-917|<div class="player-prop">🏠 ${p.properties.length} 地产${p.inJail?' 🔒':''}</div>
-918|</div></div></div>`;
-919|}).join('');
-920|
-921|const btnRoll=document.getElementById('btn-roll'),btnBuy=document.getElementById('btn-buy');
-922|const btnPass=document.getElementById('btn-pass'),btnBuild=document.getElementById('btn-build');
-923|const btnContinue=document.getElementById('btn-continue');
-924|
-925|btnRoll.style.display=gamePhase==='roll'?'block':'none';
-926|btnBuy.style.display=gamePhase==='buy'?'block':'none';
-927|btnPass.style.display=(gamePhase==='buy'||gamePhase==='build')?'block':'none';
-928|btnPass.textContent=gamePhase==='buy'?'⏭ 跳过 (拍卖)':'⏭ 跳过';
-929|btnBuild.style.display=gamePhase==='build'?'block':'none';
-930|btnContinue.style.display=gamePhase==='result'?'block':'none';
-931|
-932|if(gamePhase==='gameover'){
-933|btnRoll.style.display='none';btnBuy.style.display='none';btnPass.style.display='none';
-934|btnBuild.style.display='none';btnContinue.style.display='none';
-935|clearSave();
-936|}
-937|
-938|// Auto-save on stable states
-939|if(!cardWalking&&!auctionState)saveGame();
-940|}
-941|
-942|function hint(msg){document.getElementById('action-hint').textContent=msg;}
-943|function log(msg){const el=document.getElementById('game-log');el.insertAdjacentHTML('afterbegin','<div>'+msg+'</div>');while(el.children.length>30)el.lastChild.remove();}
-944|function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}
-945|
-946|// Setup
-947|function updatePlayerInputs(){
-948|const n=parseInt(document.getElementById('player-count').value),div=document.getElementById('player-inputs');
-949|div.innerHTML='';
+</style>
+</head>
+<body>
+
+<div id="setup-screen">
+<div id="setup-box">
+<h1>🎩 大富翁</h1>
+<h3>经典多人对战 · BigWin Monopoly</h3>
+<label class="setup-label">玩家人数</label>
+<select id="player-count">
+<option value="2">2 人</option><option value="3">3 人</option><option value="4" selected>4 人</option><option value="5">5 人</option><option value="6">6 人</option>
+</select>
+<div id="player-inputs"></div>
+<button class="btn-start" id="btn-start-game">🎲 开始游戏</button>
+</div>
+</div>
+
+<!-- Portrait blocker overlay -->
+<div id="portrait-block" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:500;justify-content:center;align-items:center;flex-direction:column">
+<div style="text-align:center;color:#ffd700;animation:pulse 1.5s ease-in-out infinite">
+<div style="font-size:64px;margin-bottom:16px">📱</div>
+<div style="font-size:22px;font-weight:bold;margin-bottom:8px">请旋转手机</div>
+<div style="font-size:14px;color:#aaa">横屏模式获得最佳体验</div>
+</div>
+</div>
+
+<div id="app" style="display:none">
+<div id="board-container"><canvas id="board"></canvas></div>
+<div id="panel">
+<h2>👥 玩家状态</h2>
+<div id="players"></div>
+<div id="dice-area">
+<div id="dice-display"><div class="dice-face" id="die1">?</div><div class="dice-face" id="die2">?</div></div>
+</div>
+<div id="action-hint"></div>
+<button class="btn btn-roll" id="btn-roll">🎲 掷骰子</button>
+<button class="btn btn-buy" id="btn-buy" style="display:none">🏠 购买地产</button>
+<button class="btn btn-pass" id="btn-pass" style="display:none">⏭ 跳过 (拍卖)</button>
+<button class="btn btn-build" id="btn-build" style="display:none">🏗 建造房屋</button>
+<button class="btn btn-continue" id="btn-continue" style="display:none">▶ 继续</button>
+<div id="game-log"><div>欢迎来到大富翁！</div></div>
+</div>
+</div>
+
+<div id="auction-overlay">
+<div id="auction-box">
+<h2>🔨 拍卖</h2>
+<h3 id="auction-property-name"></h3>
+<div class="current-bid">当前出价: $<span id="auction-bid">0</span></div>
+<div class="bidder-name" id="auction-bidder"></div>
+<div id="auction-input-area">
+<input type="number" id="auction-amount" min="1" value="1">
+<button class="bid-btn" id="btn-place-bid">出价</button>
+<button class="pass-bid-btn" id="btn-pass-bid">放弃</button>
+</div>
+<div id="auction-result" style="display:none">
+<h3 id="auction-winner-text"></h3>
+<button class="bid-btn" id="btn-end-auction" style="margin-top:8px">确定</button>
+</div>
+</div>
+</div>
+
+<div id="card-overlay" style="display:none">
+<div id="card-popup" onclick="dismissCard()">
+<div id="card-inner">
+<div class="card-face card-back">
+<div class="card-pattern">🃏</div>
+<div class="card-type" id="card-type-label">机会</div>
+</div>
+<div class="card-face card-front" id="card-front">
+<div class="card-icon" id="card-icon">🎲</div>
+<div class="card-text" id="card-text"></div>
+<div class="card-tag">点击任意处继续</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="winner-overlay">
+<div id="winner-box">
+<h1>🏆</h1>
+<div class="winner-name" id="winner-name"></div>
+<div class="winner-stats" id="winner-stats"></div>
+<button id="btn-restart">🔄 再来一局</button>
+</div>
+</div>
+
+<script>
+const COLORS=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c'];
+
+const SPACES=[
+{name:'起点',type:'go'},
+{name:'地中海大道',type:'property',price:60,rent:[2,10,30,90,160,250],color:'#8B4513',houseCost:50},
+{name:'机会',type:'chance'},
+{name:'波罗的海大道',type:'property',price:60,rent:[4,20,60,180,320,450],color:'#8B4513',houseCost:50},
+{name:'所得税',type:'tax',amount:200},
+{name:'东方铁路',type:'railroad',price:200},
+{name:'东方大道',type:'property',price:100,rent:[6,30,90,270,400,550],color:'#87CEEB',houseCost:50},
+{name:'命运',type:'community'},
+{name:'佛蒙特大道',type:'property',price:100,rent:[6,30,90,270,400,550],color:'#87CEEB',houseCost:50},
+{name:'康涅狄格大道',type:'property',price:120,rent:[8,40,100,300,450,600],color:'#87CEEB',houseCost:50},
+{name:'监狱/探视',type:'jail'},
+{name:'圣查尔斯广场',type:'property',price:140,rent:[10,50,150,450,625,750],color:'#FF69B4',houseCost:100},
+{name:'电力公司',type:'utility',price:150},
+{name:'州立大道',type:'property',price:140,rent:[10,50,150,450,625,750],color:'#FF69B4',houseCost:100},
+{name:'弗吉尼亚大道',type:'property',price:160,rent:[12,60,180,500,700,900],color:'#FF69B4',houseCost:100},
+{name:'宾夕法尼亚铁路',type:'railroad',price:200},
+{name:'圣詹姆斯广场',type:'property',price:180,rent:[14,70,200,550,750,950],color:'#FF8C00',houseCost:100},
+{name:'机会',type:'chance'},
+{name:'田纳西大道',type:'property',price:180,rent:[14,70,200,550,750,950],color:'#FF8C00',houseCost:100},
+{name:'纽约大道',type:'property',price:200,rent:[16,80,220,600,800,1000],color:'#FF8C00',houseCost:100},
+{name:'免费停车',type:'free'},
+{name:'肯塔基大道',type:'property',price:220,rent:[18,90,250,700,875,1050],color:'#FF0000',houseCost:150},
+{name:'机会',type:'chance'},
+{name:'印第安纳大道',type:'property',price:220,rent:[18,90,250,700,875,1050],color:'#FF0000',houseCost:150},
+{name:'伊利诺伊大道',type:'property',price:240,rent:[20,100,300,750,925,1100],color:'#FF0000',houseCost:150},
+{name:'B&O铁路',type:'railroad',price:200},
+{name:'大西洋大道',type:'property',price:260,rent:[22,110,330,800,975,1150],color:'#FFFF00',houseCost:150},
+{name:'文特诺大道',type:'property',price:260,rent:[22,110,330,800,975,1150],color:'#FFFF00',houseCost:150},
+{name:'自来水厂',type:'utility',price:150},
+{name:'马文花园',type:'property',price:280,rent:[24,120,360,850,1025,1200],color:'#FFFF00',houseCost:150},
+{name:'进监狱',type:'gotojail'},
+{name:'太平洋大道',type:'property',price:300,rent:[26,130,390,900,1100,1275],color:'#008000',houseCost:200},
+{name:'北卡罗来纳大道',type:'property',price:300,rent:[26,130,390,900,1100,1275],color:'#008000',houseCost:200},
+{name:'机会',type:'chance'},
+{name:'宾夕法尼亚大道',type:'property',price:320,rent:[28,150,450,1000,1200,1400],color:'#008000',houseCost:200},
+{name:'短线铁路',type:'railroad',price:200},
+{name:'命运',type:'community'},
+{name:'公园广场',type:'property',price:350,rent:[35,175,500,1100,1300,1500],color:'#00008B',houseCost:200},
+{name:'奢侈税',type:'tax',amount:100},
+{name:'海滨大道',type:'property',price:400,rent:[50,200,600,1400,1700,2000],color:'#00008B',houseCost:200}
+];
+
+const CHANCE_CARDS=[
+{text:'银行发放红利 $150',act:p=>{p.money+=150;return'获得 $150'}},
+{text:'前进到起点',act:p=>{movePlayerTo(p,0);p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 前进到起点 +$200');return'前进到起点 +$200'}},
+{text:'后退 3 格',act:p=>{movePlayerBack(p,3);return'后退 3 格'}},
+{text:'缴纳税款 $75',act:p=>{p.money-=75;return'缴税 $75'}},
+{text:'前进到免费停车',act:p=>{movePlayerTo(p,20);return'前进到免费停车'}},
+{text:'银行利息 $50',act:p=>{p.money+=50;return'获得利息 $50'}},
+{text:'前进到伊利诺伊大道',act:p=>{movePlayerTo(p,24);return'前进到伊利诺伊大道'}},
+{text:'维修费用 $100',act:p=>{p.money-=100;return'维修 -$100'}},
+{text:'前进到圣查尔斯广场',act:p=>{movePlayerTo(p,11);return'前进到圣查尔斯广场'}},
+{text:'生日快乐！每人给你 $10',act:p=>{let t=0;players.forEach(o=>{if(o!==p&&!o.bankrupt){o.money-=10;t+=10}});p.money+=t;return'收到 $'+t}},
+{text:'获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
+{text:'进监狱！',act:p=>{sendToJail(p);return'进监狱！'}},
+{text:'获得 $200',act:p=>{p.money+=200;return'获得 $200'}},
+{text:'医疗费用 $50',act:p=>{p.money-=50;return'医疗 -$50'}},
+{text:'前进到海滨大道',act:p=>{movePlayerTo(p,39);return'前进到海滨大道'}},
+{text:'银行失误，获得 $200',act:p=>{p.money+=200;return'获得 $200'}}
+];
+const COMMUNITY_CARDS=[
+{text:'银行错误，获得 $200',act:p=>{p.money+=200;return'获得 $200'}},
+{text:'医生费用 $50',act:p=>{p.money-=50;return'医疗 -$50'}},
+{text:'出售股票获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
+{text:'人寿保险到期，获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
+{text:'医院费用 $100',act:p=>{p.money-=100;return'医疗 -$100'}},
+{text:'学校费用 $50',act:p=>{p.money-=50;return'学费 -$50'}},
+{text:'咨询服务费 $25',act:p=>{p.money+=25;return'获得 $25'}},
+{text:'维修评估，每栋$40/酒店$115',act:p=>{let c=0;SPACES.forEach(s=>{if(s.owner===p.id)c+=s.houses*(s.houses===5?115:40)});p.money-=c;return'维修 -$'+c}},
+{text:'选美比赛获奖 $10',act:p=>{p.money+=10;return'获得 $10'}},
+{text:'继承遗产 $100',act:p=>{p.money+=100;return'获得 $100'}},
+{text:'出售旧货 $50',act:p=>{p.money+=50;return'获得 $50'}},
+{text:'获得 $25',act:p=>{p.money+=25;return'获得 $25'}},
+{text:'进监狱！',act:p=>{sendToJail(p);return'进监狱！'}},
+{text:'前进到起点',act:p=>{movePlayerTo(p,0);p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 前进到起点 +$200');return'前进到起点 +$200'}},
+{text:'获得 $100',act:p=>{p.money+=100;return'获得 $100'}},
+{text:'生日礼物 $10',act:p=>{p.money+=10;return'获得 $10'}}
+];
+
+// State
+let players=[],currentPlayer=0,gamePhase='roll',diceValues=[0,0],doublesCount=0;
+let canvas,ctx,BOARD_SIZE=700,CELL_SIZE,chanceDeck,communityDeck,chanceIdx=0,communityIdx=0;
+let animFrame=null,auctionState=null;
+let floatingTexts=[];
+let jailAnim=null; // {player, startTime}
+let tokenAnims={}; // per-player animation state: {fromX,fromY,toX,toY,progress}
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function initGame(numPlayers,names,colors){
+players=[];currentPlayer=0;gamePhase='roll';doublesCount=0;auctionState=null;tokenAnims={};
+for(let i=0;i<numPlayers;i++){
+players.push({id:i,name:names[i]||'玩家'+(i+1),color:colors[i],money:1500,position:0,properties:[],inJail:false,jailTurns:0,bankrupt:false,animPos:0});
+}
+SPACES.forEach(s=>{s.owner=null;s.houses=0});
+chanceDeck=shuffle([...CHANCE_CARDS]);communityDeck=shuffle([...COMMUNITY_CARDS]);
+chanceIdx=0;communityIdx=0;
+}
+
+// Card-triggered walking animation (no GO salary, no jail/doubles logic)
+let cardWalking=false;
+function cardWalkAnimate(p,targetPos,onDone){
+if(animFrame)cancelAnimationFrame(animFrame);
+const startPos=p.position;
+const steps=targetPos>=startPos?targetPos-startPos:targetPos+40-startPos;
+if(steps===0){onDone();return;}
+cardWalking=true;
+let step=0;
+const stepTime=steps>20?Math.max(40,2000/steps):150,startTime=performance.now();
+function frame(ts){
+const newStep=Math.min(Math.floor((ts-startTime)/stepTime),steps);
+if(newStep>step){
+step=newStep;p.position=(startPos+step)%40;
+}
+p.animPos=startPos+((ts-startTime)/(steps*stepTime))*steps;
+drawBoard();
+if(step<steps){animFrame=requestAnimationFrame(frame);}
+else{
+p.position=targetPos;p.animPos=targetPos;
+animFrame=null;cardWalking=false;
+drawBoard();
+onDone();
+}
+}
+animFrame=requestAnimationFrame(frame);
+}
+
+// Movement (used by card effects)
+function movePlayerTo(p,pos){
+cardWalkAnimate(p,pos,()=>{
+landOnSpace(p);
+updateUI();
+});
+}
+function movePlayerBack(p,steps){
+cardWalkBack(p,steps,()=>{
+landOnSpace(p);
+updateUI();
+});
+}
+
+// Backwards walking animation for "后退" cards
+function cardWalkBack(p,steps,onDone){
+if(animFrame)cancelAnimationFrame(animFrame);
+cardWalking=true;
+const startPos=p.position;
+const targetPos=(startPos-steps+40)%40;
+let step=0;
+const stepTime=150,startTime=performance.now();
+function frame(ts){
+const newStep=Math.min(Math.floor((ts-startTime)/stepTime),steps);
+if(newStep>step){
+step=newStep;p.position=(startPos-step+40)%40;
+}
+// Smooth interpolation going backwards
+let raw=startPos-((ts-startTime)/(steps*stepTime))*steps;
+p.animPos=((raw%40)+40)%40;
+drawBoard();
+if(step<steps){animFrame=requestAnimationFrame(frame);}
+else{
+p.position=targetPos;p.animPos=targetPos;
+animFrame=null;cardWalking=false;
+drawBoard();
+onDone();
+}
+}
+animFrame=requestAnimationFrame(frame);
+}
+
+// Landing
+function landOnSpace(p){
+const s=SPACES[p.position];
+switch(s.type){
+case'property':case'railroad':case'utility':
+if(s.owner===null){gamePhase='buy';hint('购买 '+s.name+' ($'+s.price+')？');}
+else if(s.owner!==p.id){payRent(p,s);checkBankrupt(p);gamePhase='result';}
+else if(s.type==='property'){
+const cg=SPACES.filter(sp=>sp.color===s.color&&sp.type==='property');
+const ownsAll=cg.every(sp=>sp.owner===p.id);
+const canBuild=ownsAll&&(s.houses||0)<5&&p.money>=(s.houseCost||50)&&(s.houses||0)<=Math.min(...cg.map(sp=>sp.houses||0));
+if(canBuild){gamePhase='build';hint('你拥有 '+s.name+'，可以建房');}
+else{
+let why='你拥有 '+s.name;
+if(!ownsAll)why+='（需拥有全部'+cg.length+'处该色地产）';
+else if((s.houses||0)>=5)why+='（已是酒店）';
+else if(p.money<(s.houseCost||50))why+='（资金不足）';
+else why+='（需均匀建房）';
+gamePhase='result';hint(why);
+}
+}
+else{gamePhase='result';hint('你拥有 '+s.name);}
+break;
+case'tax':p.money-=s.amount;moneyAnim('-$'+s.amount,'#f44336');log(p.name+' 缴税 $'+s.amount);checkBankrupt(p);gamePhase='result';hint(p.name+' 缴税 $'+s.amount);break;
+case'chance':drawCard(p,'chance');break;
+case'community':drawCard(p,'community');break;
+case'gotojail':sendToJail(p);log(p.name+' 被送进监狱！');gamePhase='result';hint(p.name+' 进监狱了！');break;
+case'go':gamePhase='result';hint('经过起点');break;
+case'free':gamePhase='result';hint('免费停车，休息一下');break;
+case'jail':gamePhase='result';hint('探视监狱');break;
+}
+updateUI();
+}
+
+function payRent(p,s){
+let rent=0;
+if(s.type==='railroad'){const n=SPACES.filter(sp=>sp.type==='railroad'&&sp.owner===s.owner).length;rent=[25,50,100,200][n-1];}
+else if(s.type==='utility'){const n=SPACES.filter(sp=>sp.type==='utility'&&sp.owner===s.owner).length;rent=n===2?diceValues[0]*10+10:diceValues[0]*4;}
+else{rent=s.rent[Math.min(s.houses||0,5)];}
+p.money-=rent;players[s.owner].money+=rent;
+moneyAnim('-$'+rent,'#f44336');
+log(p.name+' 支付 $'+rent+' 租金给 '+players[s.owner].name);
+hint(p.name+' 支付 $'+rent+' 租金');
+}
+
+function drawCard(p,type){
+const deck=type==='chance'?chanceDeck:communityDeck;
+const idx=type==='chance'?chanceIdx:communityIdx;
+const card=deck[idx%deck.length];
+if(type==='chance')chanceIdx++;else communityIdx++;
+
+// Pre-set card content
+document.getElementById('card-type-label').textContent=type==='chance'?'机会':'命运';
+document.getElementById('card-front').className='card-face card-front '+(type==='chance'?'chance':'community');
+document.getElementById('card-icon').textContent=type==='chance'?'❓':'📬';
+document.getElementById('card-text').textContent=card.text;
+window._pendingCard={p,card,type};
+
+// Calculate player's screen position from canvas
+const popup=document.getElementById('card-popup');
+const canvas=document.getElementById('board');
+const rect=canvas.getBoundingClientRect();
+const{row,col}=getSpacePos(p.position);
+const CELL=rect.width/11;
+const pad=CELL*1.1;
+let cx=rect.left+col*CELL+CELL/2,cy=rect.top+row*CELL+CELL/2;
+if(row===0)cy=rect.top+pad/2;if(row===10)cy=rect.top+rect.height-pad/2;
+if(col===0)cx=rect.left+pad/2;if(col===10)cx=rect.left+rect.width-pad/2;
+
+// Start card at player position, fly to center
+popup.style.transition='none';
+popup.style.left=cx-130+'px';popup.style.top=cy-180+'px';
+popup.style.transform='scale(0.3) rotate(-15deg)';
+popup.style.opacity='0.8';
+
+// Show overlay (dark bg only)
+document.getElementById('card-overlay').style.display='flex';
+
+// Force reflow then animate to center
+popup.offsetHeight;
+popup.classList.add('fly-in');
+popup.style.transition='all 0.6s cubic-bezier(0.22,0.61,0.36,1)';
+popup.style.left='50%';popup.style.top='50%';
+popup.style.transform='translate(-50%,-50%) scale(1) rotate(0deg)';
+popup.style.opacity='1';
+
+// Flip after fly-in completes
+setTimeout(()=>{
+popup.classList.remove('fly-in');
+document.getElementById('card-inner').classList.add('flipped');
+},650);
+}
+
+function dismissCard(){
+if(!window._pendingCard)return;
+const{p,card,type}=window._pendingCard;
+window._pendingCard=null;
+document.getElementById('card-overlay').style.display='none';
+document.getElementById('card-inner').classList.remove('flipped');
+// Reset card position for next draw
+const popup=document.getElementById('card-popup');
+popup.classList.remove('fly-in');
+popup.style.transition='none';
+popup.style.left='';popup.style.top='';popup.style.transform='';popup.style.opacity='';
+const prevPhase=gamePhase;
+const msg=card.act(p);
+log(p.name+' ['+(type==='chance'?'机会':'命运')+'] '+card.text+' → '+msg);
+checkBankrupt(p);
+// If card triggered a walk animation, let the callback handle landOnSpace + updateUI
+if(cardWalking){
+// Animation callback will call landOnSpace → sets gamePhase → updateUI
+return;
+}
+// Card was a simple money transaction — set to result
+if(gamePhase===prevPhase||gamePhase==='roll')gamePhase='result';
+if(gamePhase!=='gameover')updateUI();
+}
+
+function buildHouse(){
+const p=players[currentPlayer],s=SPACES[p.position];
+if(s.type!=='property'||s.owner!==p.id)return;
+const cg=SPACES.filter(sp=>sp.color===s.color&&sp.type==='property');
+if(!cg.every(sp=>sp.owner===p.id)){toast('需要拥有该颜色组全部地产！');return;}
+if((s.houses||0)>=5){toast('已是酒店！');return;}
+const cost=s.houseCost||50;if(p.money<cost){toast('资金不足！');return;}
+const mh=Math.min(...cg.map(sp=>sp.houses||0));
+if((s.houses||0)>mh){toast('请先在其他同色地产上建房！');return;}
+p.money-=cost;s.houses=(s.houses||0)+1;
+log(p.name+' 建造'+(s.houses===5?'酒店':'房屋')+' ($'+cost+')');
+gamePhase='result';updateUI();
+}
+
+function checkBankrupt(p){
+if(p.money<0&&!p.bankrupt){
+p.bankrupt=true;log(p.name+' 破产！💸');
+SPACES.forEach(s=>{if(s.owner===p.id){s.owner=null;s.houses=0}});p.properties=[];
+const alive=players.filter(pl=>!pl.bankrupt);
+if(alive.length===1){
+gamePhase='gameover';
+const w=alive[0];
+document.getElementById('winner-name').textContent=w.name+' 获胜！';
+document.getElementById('winner-stats').textContent='💰 资产 $'+w.money.toLocaleString()+' | 🏠 '+w.properties.length+' 处地产';
+document.getElementById('winner-overlay').style.display='flex';
+}
+}
+}
+
+function continueTurn(){
+if(gamePhase==='gameover')return;
+if(diceValues[0]===diceValues[1]&&!players[currentPlayer].inJail){
+log(players[currentPlayer].name+' 掷出对子，再掷一次！');
+gamePhase='roll';hint('对子！'+players[currentPlayer].name+' 再掷一次');
+}else{
+advancePlayer();
+}
+updateUI();
+}
+
+// Dice & Walking Animation
+function rollDice(){
+if(gamePhase==='gameover')return;
+const p=players[currentPlayer];
+if(p.bankrupt){advancePlayer();return;}
+diceValues=[Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1];
+const total=diceValues[0]+diceValues[1];
+
+// Animate dice
+document.getElementById('die1').textContent=diceValues[0];
+document.getElementById('die2').textContent=diceValues[1];
+document.getElementById('die1').classList.add('rolling');
+document.getElementById('die2').classList.add('rolling');
+setTimeout(()=>{document.getElementById('die1').classList.remove('rolling');document.getElementById('die2').classList.remove('rolling');},400);
+
+log(p.name+' 掷出 '+diceValues[0]+'+'+diceValues[1]+'='+total);
+
+if(p.inJail){
+if(diceValues[0]===diceValues[1]){p.inJail=false;p.jailTurns=0;log(p.name+' 掷出对子，出狱！');}
+else{p.jailTurns++;if(p.jailTurns>=3){p.money-=50;p.inJail=false;p.jailTurns=0;log(p.name+' 缴纳 $50 保释金');}
+else{log(p.name+' 仍在狱中');gamePhase='result';hint(p.name+' 仍在狱中');updateUI();return;}}
+}
+
+if(diceValues[0]===diceValues[1]){doublesCount++;if(doublesCount>=3){sendToJail(p);log(p.name+' 连续三对，进监狱！');gamePhase='result';updateUI();return;}}
+else{doublesCount=0;}
+
+walkAnimate(p,total);
+}
+
+function walkAnimate(p,steps){
+if(animFrame)cancelAnimationFrame(animFrame);
+const startPos=p.position,endPos=(startPos+steps)%40;
+let step=0,passedGo=false;
+const stepTime=150,totalTime=steps*stepTime,startTime=performance.now();
+
+function frame(ts){
+const elapsed=ts-startTime;
+const newStep=Math.min(Math.floor(elapsed/stepTime),steps);
+if(newStep>step){
+step=newStep;p.position=(startPos+step)%40;
+if(startPos+step>=40&&!passedGo){passedGo=true;p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 经过起点 +$200');}
+}
+p.animPos=startPos+(elapsed/totalTime)*steps;
+drawBoard();
+if(step<steps){animFrame=requestAnimationFrame(frame);}
+else{
+p.position=endPos;p.animPos=endPos;
+if(!passedGo&&startPos+steps>=40){p.money+=200;moneyAnim('+$200','#4caf50');log(p.name+' 经过起点 +$200');}
+animFrame=null;
+drawBoard();
+landOnSpace(p);
+}
+}
+animFrame=requestAnimationFrame(frame);
+}
+
+function buyProperty(){
+const p=players[currentPlayer],s=SPACES[p.position];
+if(s.owner!==null||p.money<s.price)return;
+p.money-=s.price;s.owner=p.id;p.properties.push(p.position);
+moneyAnim('-$'+s.price,'#f44336');
+log(p.name+' 购买了 '+s.name+' ($'+s.price+')');
+gamePhase='result';updateUI();
+}
+
+function passTurn(){
+const s=SPACES[players[currentPlayer].position];
+if((s.type==='property'||s.type==='railroad'||s.type==='utility')&&s.owner===null){
+startAuction(s);return;
+}
+gamePhase='result';updateUI();
+}
+
+// Auction
+function startAuction(space){
+const alive=players.filter(p=>!p.bankrupt);
+if(alive.length<=1){gamePhase='result';updateUI();return;}
+// Order: start from current player, go clockwise
+const order=[];
+let idx=currentPlayer;
+for(let i=0;i<alive.length;i++){
+while(players[idx].bankrupt)idx=(idx+1)%players.length;
+if(!order.includes(idx))order.push(idx);
+idx=(idx+1)%players.length;
+}
+auctionState={space,currentBid:0,highestBidder:null,bidderOrder:order,currentBidderIdx:0,passed:new Set(),totalBidders:order.length};
+showAuctionUI();
+}
+function showAuctionUI(){
+const s=auctionState.space;
+document.getElementById('auction-property-name').textContent=s.name+' ($'+s.price+')';
+updateAuctionDisplay();
+document.getElementById('auction-overlay').style.display='flex';
+document.getElementById('auction-input-area').style.display='block';
+document.getElementById('auction-result').style.display='none';
+}
+function updateAuctionDisplay(){
+document.getElementById('auction-bid').textContent=auctionState.currentBid;
+const bid=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
+document.getElementById('auction-bidder').textContent=bid.name+' 请出价（高于 $'+(auctionState.currentBid||0)+'）';
+document.getElementById('auction-amount').min=auctionState.currentBid+1;
+// Smart default: if we have more cash than highest bidder, default to their total+1 to knock them out
+let defaultBid=auctionState.currentBid+1;
+if(auctionState.highestBidder!==null){
+const highest=players[auctionState.highestBidder];
+if(bid.money>highest.money){
+defaultBid=Math.max(defaultBid,Math.min(bid.money,highest.money+1));
+}
+}
+document.getElementById('auction-amount').value=Math.min(bid.money,Math.max(defaultBid,auctionState.currentBid+1));
+document.getElementById('auction-amount').placeholder='出价金额';
+}
+function placeBid(){
+const amount=parseInt(document.getElementById('auction-amount').value);
+const bidder=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
+if(isNaN(amount)||amount<=auctionState.currentBid){toast('出价必须高于当前出价！');return;}
+if(amount>bidder.money){
+// Can't afford — auto pass
+toast(bidder.name+' 资金不足，自动放弃');
+passBid();
+return;
+}
+auctionState.currentBid=amount;auctionState.highestBidder=bidder.id;
+log(bidder.name+' 出价 $'+amount);nextBidder();
+}
+function passBid(){
+const bid=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
+auctionState.passed.add(bid.id);log(bid.name+' 放弃竞拍');nextBidder();
+}
+function nextBidder(){
+do{auctionState.currentBidderIdx=(auctionState.currentBidderIdx+1)%auctionState.totalBidders;}
+while(auctionState.passed.has(auctionState.bidderOrder[auctionState.currentBidderIdx])&&auctionState.passed.size<auctionState.totalBidders);
+// Auto-skip if current bidder can't afford to bid higher
+const next=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
+if(next&&next.money<=auctionState.currentBid&&!auctionState.passed.has(next.id)){
+log(next.name+' 资金不足 ($'+next.money+')，自动放弃');
+auctionState.passed.add(next.id);
+setTimeout(()=>nextBidder(),300);
+return;
+}
+if(auctionState.totalBidders-auctionState.passed.size<=1||auctionState.passed.size>=auctionState.totalBidders-1)finishAuction();
+else updateAuctionDisplay();
+}
+function finishAuction(){
+const s=auctionState.space;
+document.getElementById('auction-input-area').style.display='none';
+document.getElementById('auction-result').style.display='block';
+if(auctionState.highestBidder===null){document.getElementById('auction-winner-text').textContent=s.name+' 流拍';}
+else{
+const w=players[auctionState.highestBidder],b=auctionState.currentBid,si=SPACES.indexOf(s);
+w.money-=b;s.owner=w.id;if(!w.properties.includes(si))w.properties.push(si);
+document.getElementById('auction-winner-text').textContent='🏆 '+w.name+' $'+b+' 赢得 '+s.name;
+log('🔨 拍卖: '+w.name+' $'+b+' → '+s.name);
+}
+}
+function endAuction(){document.getElementById('auction-overlay').style.display='none';auctionState=null;gamePhase='result';updateUI();}
+
+function advancePlayer(){
+if(gamePhase==='gameover')return;
+doublesCount=0;
+do{currentPlayer=(currentPlayer+1)%players.length;}while(players[currentPlayer].bankrupt&&players.filter(p=>!p.bankrupt).length>1);
+if(players[currentPlayer].bankrupt)return;
+gamePhase='roll';hint('轮到 '+players[currentPlayer].name);
+updateUI();
+}
+
+// Drawing
+function getSpacePos(i){
+if(i<=10)return{row:10,col:10-i,rot:0};
+if(i<=20)return{row:10-(i-10),col:0,rot:90};
+if(i<=30)return{row:0,col:i-20,rot:180};
+return{row:i-30,col:10,rot:270};
+}
+
+function getTokenCenter(pos){
+const{row,col}=getSpacePos(pos);
+const pad=CELL_SIZE*1.1;
+let cx=col*CELL_SIZE+CELL_SIZE/2,cy=row*CELL_SIZE+CELL_SIZE/2;
+if(row===0)cy=pad/2;if(row===10)cy=BOARD_SIZE-pad/2;
+if(col===0)cx=pad/2;if(col===10)cx=BOARD_SIZE-pad/2;
+return{cx,cy};
+}
+
+function drawBoard(){
+ctx.clearRect(0,0,BOARD_SIZE,BOARD_SIZE);
+ctx.fillStyle='#c8e6c9';ctx.fillRect(0,0,BOARD_SIZE,BOARD_SIZE);
+CELL_SIZE=BOARD_SIZE/11;
+const pad=CELL_SIZE*1.1,inner=BOARD_SIZE-pad*2;
+
+// Center
+ctx.fillStyle='#dcedc8';ctx.fillRect(pad,pad,inner,inner);
+ctx.fillStyle='#1a1a2e';ctx.font='bold 22px "Segoe UI",system-ui';
+ctx.fillText('🎩 大富翁',BOARD_SIZE/2-58,BOARD_SIZE/2-8);
+ctx.font='12px "Segoe UI",system-ui';ctx.fillText('BIGWIN MONOPOLY',BOARD_SIZE/2-56,BOARD_SIZE/2+16);
+
+// Spaces
+for(let i=0;i<40;i++){
+const{row,col,rot}=getSpacePos(i);
+const x=col*CELL_SIZE,y=row*CELL_SIZE;
+let w=CELL_SIZE,h=CELL_SIZE;
+if(row===0||row===10)h=pad;if(col===0||col===10)w=pad;
+const s=SPACES[i];
+
+if(s.color&&s.type==='property'){ctx.fillStyle=s.color+'44';ctx.fillRect(x,y,w,h);ctx.fillStyle=s.color;ctx.fillRect(x,y,w,5);}
+ctx.strokeStyle='#333';ctx.lineWidth=0.8;ctx.strokeRect(x,y,w,h);
+
+ctx.save();
+if(rot===0)ctx.translate(x,y);
+else if(rot===90){ctx.translate(x+w,y);ctx.rotate(Math.PI/2);}
+else if(rot===180){ctx.translate(x+w,y+h);ctx.rotate(Math.PI);}
+else{ctx.translate(x,y+h);ctx.rotate(-Math.PI/2);}
+ctx.fillStyle='#111';ctx.font='bold 9px "Segoe UI",system-ui';
+const nm=s.name;
+if(nm.length>5){ctx.fillText(nm.slice(0,5),3,12);ctx.fillText(nm.slice(5),3,23);}
+else ctx.fillText(nm,3,12);
+ctx.restore();
+
+// Owner highlight — full cell tint + thick border + badge
+if(s.owner!==null){
+const oc=players[s.owner].color;
+// Tint the whole cell
+ctx.fillStyle=oc+'66';
+if(row===0||row===10)ctx.fillRect(x+2,y+2,w-4,h-4);
+else ctx.fillRect(x+2,y+2,w-4,h-4);
+// Thick top/bottom color bar
+ctx.fillStyle=oc;
+if(row===0||row===10){ctx.fillRect(x+3,y+3,w-6,6);ctx.fillRect(x+3,y+h-9,w-6,6);}
+else{ctx.fillRect(x+3,y+3,6,h-6);ctx.fillRect(x+w-9,y+3,6,h-6);}
+// Owner number badge
+ctx.fillStyle='#fff';ctx.beginPath();
+const bx=row===0||row===10?x+w/2:col===0?x+10:x+w-10;
+const by=row===0||row===10?col===0?y+10:y+h-10:y+h/2;
+ctx.arc(bx,by,8,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#111';ctx.font='bold 8px "Segoe UI",system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+ctx.fillText(s.owner+1,bx,by);ctx.textAlign='start';ctx.textBaseline='alphabetic';
+}
+// Houses
+if(s.houses>0){
+for(let h=0;h<Math.min(s.houses,4);h++){
+ctx.fillStyle=h===3&&s.houses===5?'#d32f2f':'#2e7d32';
+ctx.fillRect(x+3+h*12,(row===0||row===10)?y+h-18:y+5,9,9);
+}
+}
+// Icons
+if(s.type==='chance'){ctx.fillStyle='#e91e63';ctx.font='16px serif';ctx.fillText('?',x+w/2-5,y+h/2+6)}
+if(s.type==='community'){ctx.fillStyle='#2196f3';ctx.font='14px serif';ctx.fillText('📫',x+w/2-8,y+h/2+5)}
+if(s.type==='go'){ctx.fillStyle='#4caf50';ctx.font='bold 12px "Segoe UI",system-ui';ctx.fillText('GO→',x+6,y+14)}
+if(s.type==='jail'){ctx.fillStyle='#ff9800';ctx.font='14px serif';ctx.fillText('🔒',x+w/2-9,y+16)}
+if(s.type==='gotojail'){ctx.fillStyle='#f44336';ctx.font='11px "Segoe UI",system-ui';ctx.fillText('→监狱',x+4,y+14)}
+if(s.price&&!s.owner){ctx.fillStyle='#333';ctx.font='8px "Segoe UI",system-ui';ctx.fillText('$'+s.price,(row===0||row===10)?x+4:x+w-24,(row===0||row===10)?y+h-3:y+12)}
+}
+
+// Draw tokens with cartoon characters
+const posCount={};
+players.forEach(p=>{
+if(p.bankrupt)return;
+const key=p.position;
+posCount[key]=(posCount[key]||0)+1;
+const idx=posCount[key]-1;
+const{row,col}=getSpacePos(p.position);
+
+// Calculate exact position for animating tokens
+let animPos=p.position;
+if(p.animPos!==undefined&&p.animPos!==p.position){
+animPos=p.animPos;
+}
+const{row:ar,col:ac}=getSpacePos(Math.floor(animPos)%40);
+const{cx,cy}=getTokenCenter(Math.floor(animPos)%40);
+
+const ox=(idx%2)*20-10,oy=Math.floor(idx/2)*20-10;
+drawCharacter(cx+ox,cy+oy,18,p);
+});
+// Draw animations on top
+drawFloatingTexts();
+drawJailAnim();
+}
+
+function drawCharacter(x,y,r,p){
+const col=p.color;
+// Body shadow
+ctx.fillStyle='rgba(0,0,0,0.3)';ctx.beginPath();ctx.ellipse(x,y+r*0.7,r*0.8,r*0.25,0,0,Math.PI*2);ctx.fill();
+// Body
+ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-r*0.05,r*0.6,0,Math.PI*2);ctx.fill();
+// Head
+ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-r*0.65,r*0.55,0,Math.PI*2);ctx.fill();
+// Eyes
+ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-r*0.18,y-r*0.72,r*0.16,0,Math.PI*2);ctx.fill();
+ctx.beginPath();ctx.arc(x+r*0.18,y-r*0.72,r*0.16,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x-r*0.18,y-r*0.72,r*0.07,0,Math.PI*2);ctx.fill();
+ctx.beginPath();ctx.arc(x+r*0.18,y-r*0.72,r*0.07,0,Math.PI*2);ctx.fill();
+// Smile
+ctx.strokeStyle='#111';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y-r*0.62,r*0.15,0.1,Math.PI-0.1);ctx.stroke();
+// Hair/hat
+ctx.fillStyle=darken(col,30);ctx.beginPath();ctx.arc(x,y-r*0.92,r*0.3,Math.PI,2*Math.PI);ctx.fill();
+// Player number badge
+ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x+r*0.45,y-r*0.85,r*0.18,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#111';ctx.font='bold 8px "Segoe UI",system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+ctx.fillText(p.id+1,x+r*0.45,y-r*0.85);ctx.textAlign='start';ctx.textBaseline='alphabetic';
+// Active glow
+if(p.id===currentPlayer&&!p.bankrupt){
+ctx.strokeStyle='#ffd700';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y-r*0.3,r*0.75,0,Math.PI*2);ctx.stroke();
+}
+}
+
+function darken(hex,amt){
+let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+r=Math.max(0,r-amt);g=Math.max(0,g-amt);b=Math.max(0,b-amt);
+return'#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+function moneyAnim(text,color){
+const p=players[currentPlayer];
+const{row,col}=getSpacePos(p.position);
+const{cx,cy}=getTokenCenter(p.position);
+floatingTexts.push({x:cx,y:cy,text,color,alpha:1,vy:-1.5,life:60});
+}
+function drawFloatingTexts(){
+for(let i=floatingTexts.length-1;i>=0;i--){
+const f=floatingTexts[i];
+f.y+=f.vy;f.life--;
+if(f.life<=20)f.alpha=f.life/20;
+ctx.save();ctx.globalAlpha=f.alpha;
+ctx.font='bold 16px "Segoe UI",system-ui';ctx.textAlign='center';
+ctx.fillStyle=f.color;ctx.fillText(f.text,f.x,f.y);
+ctx.restore();
+if(f.life<=0)floatingTexts.splice(i,1);
+}
+}
+function sendToJail(p){
+const oldPos=p.position;
+p.inJail=true;p.jailTurns=0;p.position=10;
+startJailAnim(p,oldPos);
+}
+function startJailAnim(p,fromPos){
+jailAnim={player:p.id,fromPos:fromPos,startTime:performance.now()};
+// Keep redrawing until jail animation finishes
+function jailFrame(){
+drawBoard();
+if(jailAnim)requestAnimationFrame(jailFrame);
+}
+requestAnimationFrame(jailFrame);
+}
+function drawJailAnim(){
+if(!jailAnim)return;
+const elapsed=performance.now()-jailAnim.startTime;
+const duration=1500;
+if(elapsed>duration){jailAnim=null;return;}
+const p=players[jailAnim.player];
+const{row,col}=getSpacePos(10); // jail position
+const cx=col*CELL_SIZE+CELL_SIZE/2,cy=row*CELL_SIZE+CELL_SIZE/2;
+const progress=Math.min(elapsed/duration,1);
+const ease=1-Math.pow(1-progress,2);
+// Police car drives from original position to jail
+const from=jailAnim.fromPos||0;
+const{row:sr,col:sc}=getSpacePos(from);
+const scx=sc*CELL_SIZE+CELL_SIZE/2,scy=sr*CELL_SIZE+CELL_SIZE/2;
+const x=scx+(cx-scx)*ease,y=scy+(cy-scy)*ease;
+ctx.save();ctx.font='28px serif';ctx.textAlign='center';
+ctx.fillText('🚔',x,y-10);
+ctx.restore();
+}
+
+function updateUI(){
+drawBoard();
+const panel=document.getElementById('players');
+panel.innerHTML=players.map(p=>{
+const active=p.id===currentPlayer&&!p.bankrupt?'active':'',bkr=p.bankrupt?'bankrupt':'';
+return`<div class="player-card ${active} ${bkr}">
+<div class="flex-row">
+<div class="player-avatar" style="background:${p.color}"></div>
+<div class="player-info">
+<div class="player-name">${p.name}</div>
+<div class="player-money">💰 $${(p.money||0).toLocaleString()}</div>
+<div class="player-prop">🏠 ${p.properties.length} 地产${p.inJail?' 🔒':''}</div>
+</div></div></div>`;
+}).join('');
+
+const btnRoll=document.getElementById('btn-roll'),btnBuy=document.getElementById('btn-buy');
+const btnPass=document.getElementById('btn-pass'),btnBuild=document.getElementById('btn-build');
+const btnContinue=document.getElementById('btn-continue');
+
+btnRoll.style.display=gamePhase==='roll'?'block':'none';
+btnBuy.style.display=gamePhase==='buy'?'block':'none';
+btnPass.style.display=(gamePhase==='buy'||gamePhase==='build')?'block':'none';
+btnPass.textContent=gamePhase==='buy'?'⏭ 跳过 (拍卖)':'⏭ 跳过';
+btnBuild.style.display=gamePhase==='build'?'block':'none';
+btnContinue.style.display=gamePhase==='result'?'block':'none';
+
+if(gamePhase==='gameover'){
+btnRoll.style.display='none';btnBuy.style.display='none';btnPass.style.display='none';
+btnBuild.style.display='none';btnContinue.style.display='none';
+clearSave();
+}
+
+// Auto-save on stable states
+if(!cardWalking&&!auctionState)saveGame();
+}
+
+function hint(msg){document.getElementById('action-hint').textContent=msg;}
+function log(msg){const el=document.getElementById('game-log');el.insertAdjacentHTML('afterbegin','<div>'+msg+'</div>');while(el.children.length>30)el.lastChild.remove();}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}
+
+// Setup
+function updatePlayerInputs(){
+const n=parseInt(document.getElementById('player-count').value),div=document.getElementById('player-inputs');
+div.innerHTML='';
 for(let i=0;i<n;i++)div.innerHTML+=`<div class="player-setup-card"><label class="setup-label">👤 玩家 ${i+1}</label><input id="pname-${i}" placeholder="名字" value="玩家${i+1}"><div class="color-pick" id="pcolor-${i}">${COLORS.map((c,j)=>`<div class="color-dot${j===i?' selected':''}" style="background:${c}" data-p="${i}" data-c="${j}" onclick="selectColor(this)"></div>`).join('')}</div></div>`;
-951|}
-952|function selectColor(el){const p=el.dataset.p;document.querySelectorAll('#pcolor-'+p+' .color-dot').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');}
-953|function startGame(){
-954|const n=parseInt(document.getElementById('player-count').value),names=[],colors=[];
-955|for(let i=0;i<n;i++){names.push(document.getElementById('pname-'+i).value||'玩家'+(i+1));const sel=document.querySelector('#pcolor-'+i+' .color-dot.selected');colors.push(sel?COLORS[parseInt(sel.dataset.c)]:COLORS[i]);}
-956|clearSave();
-957|document.getElementById('setup-screen').style.display='none';document.getElementById('app').style.display='flex';
-958|
-959|canvas=document.getElementById('board');ctx=canvas.getContext('2d');
-960|const isMobile=window.innerWidth<820,mw=isMobile?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);
-961|BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;
-962|initGame(n,names,colors);drawBoard();updateUI();hint('轮到 '+players[0].name);
-963|}
-964|
-965|updatePlayerInputs();
-966|// Global orientation watch — also works on setup screen
-967|(function(){
-968|const portraitBlocker=document.getElementById('portrait-block');
-969|const checkOrient=()=>{
-970|const isPortrait=window.innerHeight>window.innerWidth&&window.innerWidth<900;
-971|portraitBlocker.style.display=isPortrait?'flex':'none';
-972|};
-973|window.addEventListener('resize',checkOrient);
-974|window.addEventListener('orientationchange',()=>setTimeout(checkOrient,300));
-975|checkOrient();
-976|})();
-977|// === Game save/restore ===
-978|function saveGame(){
-979|const data={
-980|players:players.map(p=>({id:p.id,name:p.name,color:p.color,money:p.money,position:p.position,properties:p.properties,inJail:p.inJail,jailTurns:p.jailTurns,bankrupt:p.bankrupt})),
-981|currentPlayer,gamePhase,doublesCount,
-982|spaces:SPACES.map(s=>({owner:s.owner,houses:s.houses})),
-983|chanceIdx,communityIdx
-984|};
-985|localStorage.setItem('bigwin_save',JSON.stringify(data));
-986|}
-987|function hasSavedGame(){
-988|return !!localStorage.getItem('bigwin_save');
-989|}
-990|function loadSavedGame(){
-991|const raw=localStorage.getItem('bigwin_save');
-992|if(!raw)return false;
-993|try{
-994|const data=JSON.parse(raw);
-995|players=data.players.map(p=>({...p,animPos:p.position}));
-996|currentPlayer=data.currentPlayer;
-997|gamePhase=data.gamePhase;
-998|doublesCount=data.doublesCount||0;
-999|data.spaces.forEach((s,i)=>{SPACES[i].owner=s.owner;SPACES[i].houses=s.houses;});
-1000|chanceIdx=data.chanceIdx||0;communityIdx=data.communityIdx||0;
-1001|chanceDeck=shuffle([...CHANCE_CARDS]);communityDeck=shuffle([...COMMUNITY_CARDS]);
-1002|auctionState=null;cardWalking=false;jailAnim=null;floatingTexts=[];tokenAnims={};
-1003|return true;
-1004|}catch(e){return false;}
-1005|}
-1006|function clearSave(){localStorage.removeItem('bigwin_save');}
-1007|
-1008|// Check for saved game on load
-1009|if(hasSavedGame()){
-1010|document.getElementById('setup-screen').style.display='none';
-1011|document.getElementById('app').style.display='flex';
-1012|canvas=document.getElementById('board');ctx=canvas.getContext('2d');
-1013|const isMobile=window.innerWidth<820,mw=isMobile?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);
-1014|BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;
-1015|if(loadSavedGame()){
-1016|drawBoard();updateUI();
-1017|if(gamePhase==='roll')hint('轮到 '+players[currentPlayer].name);
-1018|else if(gamePhase==='buy'){const s=SPACES[players[currentPlayer].position];hint('购买 '+s.name+' ($'+s.price+')？');}
-1019|else if(gamePhase==='build')hint('可以建房');
-1020|else hint('轮到 '+players[currentPlayer].name);
-1021|}
-1022|}
-1023|// Mobile: request landscape on first touch of setup screen
-1024|(function(){
-1025|let locked=false;
-1026|document.getElementById('setup-screen').addEventListener('click',function(){
-1027|if(locked||window.innerWidth>=900)return;
-1028|locked=true;
-1029|const el=document.documentElement;
-1030|if(el.requestFullscreen){el.requestFullscreen().then(()=>{
-1031|if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
-1032|}).catch(()=>{});}
-1033|else if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
-1034|},{once:true});
-1035|})();
-1036|// Bind all button event listeners
-1037|document.getElementById('btn-start-game').addEventListener('click', startGame);
-1038|document.getElementById('player-count').addEventListener('change', updatePlayerInputs);
-1039|document.getElementById('btn-roll').addEventListener('click', rollDice);
-1040|document.getElementById('btn-buy').addEventListener('click', buyProperty);
-1041|document.getElementById('btn-pass').addEventListener('click', passTurn);
-1042|document.getElementById('btn-build').addEventListener('click', buildHouse);
-1043|document.getElementById('btn-continue').addEventListener('click', continueTurn);
-1044|document.getElementById('btn-place-bid').addEventListener('click', placeBid);
-1045|document.getElementById('btn-pass-bid').addEventListener('click', passBid);
-1046|document.getElementById('btn-end-auction').addEventListener('click', endAuction);
-1047|document.getElementById('card-overlay').addEventListener('click', dismissCard);
-1048|document.getElementById('btn-restart').addEventListener('click', ()=>{clearSave();location.reload();});
-1049|window.addEventListener('resize',()=>{if(canvas){const isM=window.innerWidth<820,mw=isM?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;drawBoard();}});
-1050|</script>
-1051|</body>
-1052|</html>
-1053|
+}
+function selectColor(el){const p=el.dataset.p;document.querySelectorAll('#pcolor-'+p+' .color-dot').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');}
+function startGame(){
+const n=parseInt(document.getElementById('player-count').value),names=[],colors=[];
+for(let i=0;i<n;i++){names.push(document.getElementById('pname-'+i).value||'玩家'+(i+1));const sel=document.querySelector('#pcolor-'+i+' .color-dot.selected');colors.push(sel?COLORS[parseInt(sel.dataset.c)]:COLORS[i]);}
+clearSave();
+document.getElementById('setup-screen').style.display='none';document.getElementById('app').style.display='flex';
+
+canvas=document.getElementById('board');ctx=canvas.getContext('2d');
+const isMobile=window.innerWidth<820,mw=isMobile?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);
+BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;
+initGame(n,names,colors);drawBoard();updateUI();hint('轮到 '+players[0].name);
+}
+
+updatePlayerInputs();
+// Global orientation watch — also works on setup screen
+(function(){
+const portraitBlocker=document.getElementById('portrait-block');
+const checkOrient=()=>{
+const isPortrait=window.innerHeight>window.innerWidth&&window.innerWidth<900;
+portraitBlocker.style.display=isPortrait?'flex':'none';
+};
+window.addEventListener('resize',checkOrient);
+window.addEventListener('orientationchange',()=>setTimeout(checkOrient,300));
+checkOrient();
+})();
+// === Game save/restore ===
+function saveGame(){
+const data={
+players:players.map(p=>({id:p.id,name:p.name,color:p.color,money:p.money,position:p.position,properties:p.properties,inJail:p.inJail,jailTurns:p.jailTurns,bankrupt:p.bankrupt})),
+currentPlayer,gamePhase,doublesCount,
+spaces:SPACES.map(s=>({owner:s.owner,houses:s.houses})),
+chanceIdx,communityIdx
+};
+localStorage.setItem('bigwin_save',JSON.stringify(data));
+}
+function hasSavedGame(){
+return !!localStorage.getItem('bigwin_save');
+}
+function loadSavedGame(){
+const raw=localStorage.getItem('bigwin_save');
+if(!raw)return false;
+try{
+const data=JSON.parse(raw);
+players=data.players.map(p=>({...p,animPos:p.position}));
+currentPlayer=data.currentPlayer;
+gamePhase=data.gamePhase;
+doublesCount=data.doublesCount||0;
+data.spaces.forEach((s,i)=>{SPACES[i].owner=s.owner;SPACES[i].houses=s.houses;});
+chanceIdx=data.chanceIdx||0;communityIdx=data.communityIdx||0;
+chanceDeck=shuffle([...CHANCE_CARDS]);communityDeck=shuffle([...COMMUNITY_CARDS]);
+auctionState=null;cardWalking=false;jailAnim=null;floatingTexts=[];tokenAnims={};
+return true;
+}catch(e){return false;}
+}
+function clearSave(){localStorage.removeItem('bigwin_save');}
+
+// Check for saved game on load
+if(hasSavedGame()){
+document.getElementById('setup-screen').style.display='none';
+document.getElementById('app').style.display='flex';
+canvas=document.getElementById('board');ctx=canvas.getContext('2d');
+const isMobile=window.innerWidth<820,mw=isMobile?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);
+BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;
+if(loadSavedGame()){
+drawBoard();updateUI();
+if(gamePhase==='roll')hint('轮到 '+players[currentPlayer].name);
+else if(gamePhase==='buy'){const s=SPACES[players[currentPlayer].position];hint('购买 '+s.name+' ($'+s.price+')？');}
+else if(gamePhase==='build')hint('可以建房');
+else hint('轮到 '+players[currentPlayer].name);
+}
+}
+// Mobile: request landscape on first touch of setup screen
+(function(){
+let locked=false;
+document.getElementById('setup-screen').addEventListener('click',function(){
+if(locked||window.innerWidth>=900)return;
+locked=true;
+const el=document.documentElement;
+if(el.requestFullscreen){el.requestFullscreen().then(()=>{
+if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
+}).catch(()=>{});}
+else if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
+},{once:true});
+})();
+// Bind all button event listeners
+document.getElementById('btn-start-game').addEventListener('click', startGame);
+document.getElementById('player-count').addEventListener('change', updatePlayerInputs);
+document.getElementById('btn-roll').addEventListener('click', rollDice);
+document.getElementById('btn-buy').addEventListener('click', buyProperty);
+document.getElementById('btn-pass').addEventListener('click', passTurn);
+document.getElementById('btn-build').addEventListener('click', buildHouse);
+document.getElementById('btn-continue').addEventListener('click', continueTurn);
+document.getElementById('btn-place-bid').addEventListener('click', placeBid);
+document.getElementById('btn-pass-bid').addEventListener('click', passBid);
+document.getElementById('btn-end-auction').addEventListener('click', endAuction);
+document.getElementById('card-overlay').addEventListener('click', dismissCard);
+document.getElementById('btn-restart').addEventListener('click', ()=>{clearSave();location.reload();});
+window.addEventListener('resize',()=>{if(canvas){const isM=window.innerWidth<820,mw=isM?Math.min(window.innerWidth-16,500):Math.min(window.innerWidth-320,700);BOARD_SIZE=mw;canvas.width=mw;canvas.height=mw;drawBoard();}});
+</script>
+</body>
+</html>
