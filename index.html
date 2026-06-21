@@ -29,7 +29,7 @@ canvas{border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,0.5),0 0 0 3px #2a2a
 .btn-pass{background:linear-gradient(135deg,#f44336,#c62828);color:#fff}
 .btn-build{background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff}
 .btn-continue{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e}
-.btn-exit{background:linear-gradient(135deg,#555,#333);color:#aaa;font-size:12px;padding:6px 12px;margin-top:8px}
+.btn-exit{background:transparent;color:#555;font-size:11px;padding:4px 8px;margin-top:12px;border:1px solid #333;opacity:0.5;float:right}
 .btn:disabled{opacity:0.35;cursor:not-allowed;transform:none}
 #dice-area{text-align:center;margin:8px 0}
 #dice-display{display:flex;justify-content:center;gap:12px;margin:8px 0}
@@ -165,8 +165,8 @@ canvas{width:90vw!important;height:90vw!important}
 <button class="btn btn-pass" id="btn-pass" style="display:none">⏭ 跳过 (拍卖)</button>
 <button class="btn btn-build" id="btn-build" style="display:none">🏗 建造房屋</button>
 <button class="btn btn-continue" id="btn-continue" style="display:none">▶ 继续</button>
-<button class="btn btn-exit" id="btn-exit">🚪 退出游戏</button>
 <div id="game-log"><div>欢迎来到大富翁！</div></div>
+<button class="btn btn-exit" id="btn-exit">🚪 退出游戏</button>
 </div>
 </div>
 
@@ -662,7 +662,7 @@ document.getElementById('auction-amount').value=Math.min(bid.money,Math.max(defa
 document.getElementById('auction-amount').placeholder='出价金额';
 }
 function placeBid(){
-const amount=parseInt(document.getElementById('auction-amount').value);
+let amount=parseInt(document.getElementById('auction-amount').value);
 const bidder=players[auctionState.bidderOrder[auctionState.currentBidderIdx]];
 if(isNaN(amount)||amount<=auctionState.currentBid){toast('出价必须高于当前出价！');return;}
 if(amount>bidder.money){
@@ -670,6 +670,13 @@ if(amount>bidder.money){
 toast(bidder.name+' 资金不足，自动放弃');
 passBid();
 return;
+}
+// Cap: don't bid more than (richest opponent + 1)
+const maxOthers=Math.max(...players.filter(p=>!p.bankrupt&&p.id!==bidder.id).map(p=>p.money),0);
+if(amount>maxOthers+1){
+amount=maxOthers+1;
+document.getElementById('auction-amount').value=amount;
+if(amount<=auctionState.currentBid){toast('出价已自动调整，但仍不高于当前出价');return;}
 }
 auctionState.currentBid=amount;auctionState.highestBidder=bidder.id;
 log(bidder.name+' 出价 $'+amount);nextBidder();
