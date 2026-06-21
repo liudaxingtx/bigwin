@@ -723,6 +723,7 @@ updateUI();
 }
 
 function exitGame(){
+if(!confirm('确定要退出游戏吗？当前进度将丢失。'))return;
 clearSave();
 localStorage.removeItem('bigwin_save');
 document.getElementById('app').style.display='none';
