@@ -1226,8 +1226,8 @@ return true;
 }
 function clearSave(){localStorage.removeItem('bigwin_save');}
 
-// Check for saved game on load
-if(hasSavedGame()){
+// Check for saved game on load — skip in multi.html (no setup-screen)
+if(document.getElementById('setup-screen') && hasSavedGame()){
 document.getElementById('setup-screen').style.display='none';
 document.getElementById('app').style.display='flex';
 canvas=document.getElementById('board');ctx=canvas.getContext('2d');
@@ -1241,10 +1241,12 @@ else if(gamePhase==='build')hint('可以建房');
 else hint('轮到 '+players[currentPlayer].name);
 }
 }
-// Mobile: request landscape on first touch of setup screen
+// Mobile: request landscape on first touch
 (function(){
 let locked=false;
-// document.getElementById('setup-screen').addEventListener('click',function(){
+const setupEl=document.getElementById('setup-screen');
+if(!setupEl)return;
+setupEl.addEventListener('click',function(){
 if(locked||window.innerWidth>=900)return;
 locked=true;
 const el=document.documentElement;
@@ -1256,7 +1258,7 @@ else if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('lan
 })();
 // Bind all button event listeners
 // document.getElementById('btn-start-game').addEventListener('click', startGame);
-document.getElementById('player-count').addEventListener('change', updatePlayerInputs);
+// document.getElementById('player-count').addEventListener('change', updatePlayerInputs); // not in multi.html
 // document.getElementById('btn-roll').addEventListener('click', rollDice);
 // document.getElementById('btn-buy').addEventListener('click', buyProperty);
 // document.getElementById('btn-pass').addEventListener('click', passTurn);
